@@ -5,9 +5,14 @@ import { IncidenceMatrix } from "./IncidenceMatrix";
 import { PathFinder } from "./PathFinder";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Network, Grid3X3, Calculator } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Network, Grid3X3, Calculator, Plus, Trash2, Edit } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const GraphApp: React.FC = () => {
+  const { toast } = useToast();
   const [graph, setGraph] = useState<Graph>({
     nodes: [
       { id: "node1", x: 150, y: 100, label: "A" },
@@ -25,6 +30,7 @@ export const GraphApp: React.FC = () => {
 
   const [highlightedPath, setHighlightedPath] = useState<string[]>([]);
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
+  const [edgeWeight, setEdgeWeight] = useState<string>("1");
 
   const handleNodeSelect = (nodeId: string) => {
     setSelectedNodes(prev => {
@@ -35,6 +41,124 @@ export const GraphApp: React.FC = () => {
       } else {
         return [nodeId];
       }
+    });
+  };
+
+  const getSelectedNodesLabels = () => {
+    return selectedNodes.map(nodeId => {
+      const node = graph.nodes.find(n => n.id === nodeId);
+      return node ? node.label : nodeId;
+    });
+  };
+
+  const getExistingEdge = () => {
+    if (selectedNodes.length !== 2) return null;
+    return graph.edges.find(edge => 
+      (edge.source === selectedNodes[0] && edge.target === selectedNodes[1]) ||
+      (edge.source === selectedNodes[1] && edge.target === selectedNodes[0])
+    );
+  };
+
+  const handleAddEdge = () => {
+    if (selectedNodes.length !== 2) return;
+    
+    const weight = parseFloat(edgeWeight);
+    if (isNaN(weight) || weight <= 0) {
+      toast({
+        title: "Invalid Weight",
+        description: "Please enter a positive number for the edge weight.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const existingEdge = getExistingEdge();
+    if (existingEdge) {
+      toast({
+        title: "Edge Already Exists",
+        description: "An edge already exists between these nodes. Use 'Change Weight' to modify it.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newEdge = {
+      id: `edge-${Date.now()}`,
+      source: selectedNodes[0],
+      target: selectedNodes[1],
+      weight: weight,
+    };
+
+    setGraph(prev => ({
+      ...prev,
+      edges: [...prev.edges, newEdge],
+    }));
+
+    toast({
+      title: "Edge Added",
+      description: `Added edge between ${getSelectedNodesLabels().join(" and ")} with weight ${weight}.`,
+    });
+  };
+
+  const handleDeleteEdge = () => {
+    if (selectedNodes.length !== 2) return;
+    
+    const existingEdge = getExistingEdge();
+    if (!existingEdge) {
+      toast({
+        title: "No Edge Found",
+        description: "No edge exists between the selected nodes.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGraph(prev => ({
+      ...prev,
+      edges: prev.edges.filter(edge => edge.id !== existingEdge.id),
+    }));
+
+    toast({
+      title: "Edge Deleted",
+      description: `Deleted edge between ${getSelectedNodesLabels().join(" and ")}.`,
+    });
+  };
+
+  const handleChangeWeight = () => {
+    if (selectedNodes.length !== 2) return;
+    
+    const weight = parseFloat(edgeWeight);
+    if (isNaN(weight) || weight <= 0) {
+      toast({
+        title: "Invalid Weight",
+        description: "Please enter a positive number for the edge weight.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const existingEdge = getExistingEdge();
+    if (!existingEdge) {
+      toast({
+        title: "No Edge Found",
+        description: "No edge exists between the selected nodes. Use 'Add Edge' to create one.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGraph(prev => ({
+      ...prev,
+      edges: prev.edges.map(edge => 
+        edge.id === existingEdge.id 
+          ? { ...edge, weight: weight }
+          : edge
+      ),
+    }));
+
+    toast({
+      title: "Weight Changed",
+      description: `Changed edge weight between ${getSelectedNodesLabels().join(" and ")} to ${weight}.`,
     });
   };
 
@@ -93,6 +217,59 @@ export const GraphApp: React.FC = () => {
 
           {/* Controls */}
           <div className="space-y-6">
+            {/* Edge Controls */}
+            {selectedNodes.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Edit className="h-5 w-5" />
+                    Edge Controls
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedNodes.length === 2 
+                      ? `Selected: ${getSelectedNodesLabels().join(" ↔ ")}` 
+                      : `Selected: ${getSelectedNodesLabels().join(", ")} (select 2 nodes)`}
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edge-weight">Weight</Label>
+                    <Input
+                      id="edge-weight"
+                      type="number"
+                      min="0.1"
+                      step="0.1"
+                      value={edgeWeight}
+                      onChange={(e) => setEdgeWeight(e.target.value)}
+                      placeholder="Enter weight"
+                    />
+                  </div>
+                  
+                  {selectedNodes.length === 2 && (
+                    <div className="grid grid-cols-1 gap-2">
+                      {!getExistingEdge() ? (
+                        <Button onClick={handleAddEdge} className="w-full">
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Edge
+                        </Button>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button onClick={handleChangeWeight} variant="outline">
+                            <Edit className="h-4 w-4 mr-2" />
+                            Change Weight
+                          </Button>
+                          <Button onClick={handleDeleteEdge} variant="destructive">
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Edge
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             <PathFinder
               graph={graph}
               onPathHighlight={setHighlightedPath}
