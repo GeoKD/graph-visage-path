@@ -196,7 +196,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
               fill={getNodeColor(node.id)}
               stroke="hsl(var(--background))"
               strokeWidth="3"
-              className="cursor-grab active:cursor-grabbing transition-all duration-200 hover:scale-110"
+              className="cursor-grab active:cursor-grabbing transition-all duration-200"
               onMouseDown={(e) => handleMouseDown(e, node.id)}
               onMouseEnter={() => setHoveredNode(node.id)}
               onMouseLeave={() => setHoveredNode(null)}
