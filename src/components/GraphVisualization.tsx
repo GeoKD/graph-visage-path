@@ -26,6 +26,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
 
   const handleMouseDown = useCallback((event: React.MouseEvent, nodeId: string) => {
     event.preventDefault();
+    event.stopPropagation();
     const node = graph.nodes.find(n => n.id === nodeId);
     if (!node) return;
 
