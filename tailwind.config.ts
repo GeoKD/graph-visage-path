@@ -57,6 +57,28 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        // Graph specific colors
+        graph: {
+          canvas: "hsl(var(--graph-canvas))",
+          grid: "hsl(var(--graph-grid))",
+        },
+        node: {
+          default: "hsl(var(--node-default))",
+          selected: "hsl(var(--node-selected))",
+          hover: "hsl(var(--node-hover))",
+        },
+        edge: {
+          default: "hsl(var(--edge-default))",
+          selected: "hsl(var(--edge-selected))",
+        },
+        path: {
+          highlight: "hsl(var(--path-highlight))",
+        },
+      },
+      backgroundImage: {
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-accent": "var(--gradient-accent)",
+        "gradient-canvas": "var(--gradient-canvas)",
       },
       borderRadius: {
         lg: "var(--radius)",
