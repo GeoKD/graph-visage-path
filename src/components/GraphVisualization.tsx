@@ -23,6 +23,8 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
     offset: { x: 0, y: 0 },
   });
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+  const [editingNode, setEditingNode] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState<string>("");
 
   const handleMouseDown = useCallback((event: React.MouseEvent, nodeId: string) => {
     event.preventDefault();
@@ -99,6 +101,39 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
     onNodeSelect?.(nodeId);
   }, [onNodeSelect]);
 
+  const handleNodeDoubleClick = useCallback((event: React.MouseEvent, nodeId: string) => {
+    event.stopPropagation();
+    const node = graph.nodes.find(n => n.id === nodeId);
+    if (node) {
+      setEditingNode(nodeId);
+      setEditLabel(node.label);
+    }
+  }, [graph.nodes]);
+
+  const handleLabelChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    setEditLabel(event.target.value);
+  }, []);
+
+  const handleLabelSubmit = useCallback(() => {
+    if (editingNode && editLabel.trim()) {
+      const updatedNodes = graph.nodes.map(node =>
+        node.id === editingNode ? { ...node, label: editLabel.trim() } : node
+      );
+      onGraphChange({ ...graph, nodes: updatedNodes });
+    }
+    setEditingNode(null);
+    setEditLabel("");
+  }, [editingNode, editLabel, graph, onGraphChange]);
+
+  const handleLabelKeyDown = useCallback((event: React.KeyboardEvent) => {
+    if (event.key === 'Enter') {
+      handleLabelSubmit();
+    } else if (event.key === 'Escape') {
+      setEditingNode(null);
+      setEditLabel("");
+    }
+  }, [handleLabelSubmit]);
+
   const getNodeColor = (nodeId: string) => {
     if (selectedNodes.includes(nodeId)) return "hsl(var(--node-selected))";
     if (highlightedPath.includes(nodeId)) return "hsl(var(--path-highlight))";
@@ -106,14 +141,23 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
     return "hsl(var(--node-default))";
   };
 
+  const isEdgeInPath = (edge: Edge) => {
+    for (let i = 0; i < highlightedPath.length - 1; i++) {
+      const current = highlightedPath[i];
+      const next = highlightedPath[i + 1];
+      if ((edge.source === current && edge.target === next) || (edge.source === next && edge.target === current)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const getEdgeColor = (edge: Edge) => {
-    const isInPath = highlightedPath.includes(edge.source) && highlightedPath.includes(edge.target);
-    return isInPath ? "hsl(var(--path-highlight))" : "hsl(var(--edge-default))";
+    return isEdgeInPath(edge) ? "hsl(var(--path-highlight))" : "hsl(var(--edge-default))";
   };
 
   const getEdgeWidth = (edge: Edge) => {
-    const isInPath = highlightedPath.includes(edge.source) && highlightedPath.includes(edge.target);
-    return isInPath ? 3 : 2;
+    return isEdgeInPath(edge) ? 3 : 2;
   };
 
   return (
@@ -201,16 +245,32 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
               onMouseEnter={() => setHoveredNode(node.id)}
               onMouseLeave={() => setHoveredNode(null)}
               onClick={() => handleNodeClick(node.id)}
+              onDoubleClick={(e) => handleNodeDoubleClick(e, node.id)}
             />
-            <text
-              x={node.x}
-              y={node.y}
-              textAnchor="middle"
-              dy="0.35em"
-              className="text-sm font-bold fill-background pointer-events-none"
-            >
-              {node.label}
-            </text>
+            {editingNode === node.id ? (
+              <foreignObject x={node.x - 25} y={node.y - 12} width="50" height="24">
+                <input
+                  type="text"
+                  value={editLabel}
+                  onChange={handleLabelChange}
+                  onBlur={handleLabelSubmit}
+                  onKeyDown={handleLabelKeyDown}
+                  autoFocus
+                  className="w-full h-full text-center text-sm font-bold bg-card border border-primary rounded px-1"
+                  style={{ outline: 'none' }}
+                />
+              </foreignObject>
+            ) : (
+              <text
+                x={node.x}
+                y={node.y}
+                textAnchor="middle"
+                dy="0.35em"
+                className="text-sm font-bold fill-background pointer-events-none"
+              >
+                {node.label}
+              </text>
+            )}
           </g>
         ))}
       </svg>
