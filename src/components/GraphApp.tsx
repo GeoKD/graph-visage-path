@@ -55,8 +55,14 @@ export const GraphApp: React.FC = () => {
   const getExistingEdge = () => {
     if (selectedNodes.length !== 2) return null;
     return graph.edges.find(edge => 
-      (edge.source === selectedNodes[0] && edge.target === selectedNodes[1]) ||
-      (edge.source === selectedNodes[1] && edge.target === selectedNodes[0])
+      (edge.source === selectedNodes[0] && edge.target === selectedNodes[1])
+    );
+  };
+
+  const getReversedExistingEdge = () => {
+    if (selectedNodes.length !== 2) return null;
+    return graph.edges.find(edge => 
+      (edge.source === selectedNodes[1] && edge.target === selectedNodes[1])
     );
   };
 
@@ -66,8 +72,8 @@ export const GraphApp: React.FC = () => {
     const weight = parseFloat(edgeWeight);
     if (isNaN(weight) || weight <= 0) {
       toast({
-        title: "Invalid Weight",
-        description: "Please enter a positive number for the edge weight.",
+        title: "Неверное значение веса",
+        description: "Пожалуйста, введите число больше 0.",
         variant: "destructive",
       });
       return;
@@ -76,8 +82,7 @@ export const GraphApp: React.FC = () => {
     const existingEdge = getExistingEdge();
     if (existingEdge) {
       toast({
-        title: "Edge Already Exists",
-        description: "An edge already exists between these nodes. Use 'Change Weight' to modify it.",
+        title: "Дуга уже существует",
         variant: "destructive",
       });
       return;
@@ -120,8 +125,8 @@ export const GraphApp: React.FC = () => {
     }));
 
     toast({
-      title: "Edge Deleted",
-      description: `Deleted edge between ${getSelectedNodesLabels().join(" and ")}.`,
+      title: "Дуга удалена",
+      description: `Удалена дуга между ${getSelectedNodesLabels().join(" и ")}.`,
     });
   };
 
@@ -131,8 +136,8 @@ export const GraphApp: React.FC = () => {
     const weight = parseFloat(edgeWeight);
     if (isNaN(weight) || weight <= 0) {
       toast({
-        title: "Invalid Weight",
-        description: "Please enter a positive number for the edge weight.",
+        title: "Неверное значение веса",
+        description: "Пожалуйста, введите число больше 0.",
         variant: "destructive",
       });
       return;
@@ -141,8 +146,7 @@ export const GraphApp: React.FC = () => {
     const existingEdge = getExistingEdge();
     if (!existingEdge) {
       toast({
-        title: "No Edge Found",
-        description: "No edge exists between the selected nodes. Use 'Add Edge' to create one.",
+        title: "Дуга не найдена",
         variant: "destructive",
       });
       return;
@@ -157,9 +161,22 @@ export const GraphApp: React.FC = () => {
       ),
     }));
 
+    // const reversedExistingEdge = getReversedExistingEdge()
+
+    // if (reversedExistingEdge) {
+    //   setGraph(prev => ({
+    //   ...prev,
+    //   edges: prev.edges.map(edge => 
+    //     edge.id === reversedExistingEdge.id 
+    //       ? { ...edge, weight: weight }
+    //       : edge
+    //   ),
+    //   }));
+    // }
+
     toast({
-      title: "Weight Changed",
-      description: `Changed edge weight between ${getSelectedNodesLabels().join(" and ")} to ${weight}.`,
+      title: "Вес изменен",
+      description: `Изменен вес между ${getSelectedNodesLabels().join(" и ")} на ${weight}.`,
     });
   };
 
@@ -174,20 +191,6 @@ export const GraphApp: React.FC = () => {
           <p className="text-lg text-muted-foreground">
             {LABELS.APP_SUBTITLE}
           </p>
-          <div className="flex justify-center gap-2 mt-4">
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Network className="h-3 w-3" />
-              {LABELS.BADGE_VISUAL_GRAPH}
-            </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Grid3X3 className="h-3 w-3" />
-              {LABELS.BADGE_INCIDENCE_MATRIX}
-            </Badge>
-            <Badge variant="secondary" className="flex items-center gap-1">
-              <Calculator className="h-3 w-3" />
-              {LABELS.BADGE_DIJKSTRA}
-            </Badge>
-          </div>
         </div>
 
         {/* Main Content */}
@@ -196,10 +199,6 @@ export const GraphApp: React.FC = () => {
           <div className="lg:col-span-2">
             <Card className="h-[500px]">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Network className="h-5 w-5" />
-                  {LABELS.GRAPH_VISUALIZATION}
-                </CardTitle>
                 <p className="text-sm text-muted-foreground">
                   {LABELS.GRAPH_INSTRUCTIONS}
                 </p>
@@ -228,7 +227,7 @@ export const GraphApp: React.FC = () => {
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
                     {selectedNodes.length === 2 
-                      ? `${LABELS.SELECTED} ${getSelectedNodesLabels().join(" ↔ ")}` 
+                      ? `${LABELS.SELECTED} ${getSelectedNodesLabels().join(" -> ")}` 
                       : `${LABELS.SELECTED} ${getSelectedNodesLabels().join(", ")} ${LABELS.SELECT_TWO_NODES}`}
                   </p>
                 </CardHeader>
@@ -275,43 +274,11 @@ export const GraphApp: React.FC = () => {
               graph={graph}
               onPathHighlight={setHighlightedPath}
             />
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Grid3X3 className="h-5 w-5" />
-                  {LABELS.STATISTICS}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">{LABELS.NODES}</span>
-                  <Badge variant="outline">{graph.nodes.length}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">{LABELS.EDGES}</span>
-                  <Badge variant="outline">{graph.edges.length}</Badge>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">{LABELS.SELECTED}</span>
-                  <Badge variant="outline">{selectedNodes.length}</Badge>
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
 
         {/* Incidence Matrix */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Grid3X3 className="h-5 w-5" />
-              {LABELS.INCIDENCE_MATRIX}
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              {LABELS.MATRIX_INSTRUCTIONS}
-            </p>
-          </CardHeader>
           <CardContent>
             <div className="h-80">
               <IncidenceMatrix

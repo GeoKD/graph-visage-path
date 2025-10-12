@@ -1,51 +1,39 @@
 export const LABELS = {
   // Header
-  APP_TITLE: "Graph Theory Visualizer",
-  APP_SUBTITLE: "Interactive graph manipulation with Dijkstra's shortest path algorithm",
+  APP_TITLE: "Лабораторная работа №1",
+  APP_SUBTITLE: "Отыскание кратчайшего пути в ориентированном графе между двумя заданными вершинами методом Дейкстры.",
   
   // Graph Visualization
   GRAPH_VISUALIZATION: "Graph Visualization",
-  GRAPH_INSTRUCTIONS: "Double-click to add nodes • Drag to move • Click to select",
+  GRAPH_INSTRUCTIONS: "Двойное нажатие - добавление вершины",
   
   // Incidence Matrix
-  INCIDENCE_MATRIX: "Incidence Matrix",
-  MATRIX_INSTRUCTIONS: "Edit weights directly in the matrix • Set to 0 to remove edges",
-  MATRIX_FROM_TO: "From / To",
-  ADD_NODE: "Add Node",
-  NO_NODES: "No Nodes",
-  NO_NODES_MESSAGE: "Double-click on the graph to create nodes or use the button below",
+  ADD_NODE: "Добавить вершину",
+  NO_NODES: "Нет вершин",
+  NO_NODES_MESSAGE: "Двойное нажатие по полю графа создаст новую вершину, либо используйте кнопку снизу",
   
   // Path Finder
-  SHORTEST_PATH: "Shortest Path Finder",
-  START_NODE: "Start Node",
-  END_NODE: "End Node",
-  SELECT_START: "Select start",
-  SELECT_END: "Select end",
-  FIND_PATH: "Find Path",
-  CLEAR: "Clear",
-  PATH_FOUND: "Path Found",
-  PATH: "Path:",
-  DISTANCE: "Distance:",
-  NO_PATH: "No path exists between",
+  SHORTEST_PATH: "Нахождение кратчайшего пути",
+  START_NODE: "Начальная вершина",
+  END_NODE: "Конечная вершина",
+  SELECT_START: "Вершина...",
+  SELECT_END: "Вершина...",
+  FIND_PATH: "Найти путь",
+  CLEAR: "Очистить",
+  PATH_FOUND: "Путь найден",
+  PATH: "Путь:",
+  DISTANCE: "Расстояние:",
+  NO_PATH: "Не найдено пути между выбранными вершинами",
   
   // Edge Controls
-  EDGE_CONTROLS: "Edge Controls",
-  SELECTED: "Selected:",
-  SELECT_TWO_NODES: "(select 2 nodes)",
-  WEIGHT: "Weight",
-  ADD_EDGE: "Add Edge",
-  CHANGE_WEIGHT: "Change Weight",
-  DELETE_EDGE: "Delete Edge",
+  EDGE_CONTROLS: "Управление вершинами",
+  SELECTED: "Выбраны:",
+  SELECT_TWO_NODES: "(выберите 2 вершины)",
+  WEIGHT: "Вес",
+  ADD_EDGE: "Добавить вершину",
+  CHANGE_WEIGHT: "Изменить вес",
+  DELETE_EDGE: "Удалить вершину",
   
-  // Statistics
-  STATISTICS: "Graph Statistics",
-  NODES: "Nodes:",
-  EDGES: "Edges:",
-  
-  // Badges
-  BADGE_VISUAL_GRAPH: "Visual Graph",
-  BADGE_INCIDENCE_MATRIX: "Incidence Matrix",
-  BADGE_DIJKSTRA: "Dijkstra's Algorithm",
   
   // Placeholders
   ENTER_WEIGHT: "Enter weight",

@@ -24,8 +24,7 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
       // Remove edge if weight is 0 or invalid
       const updatedEdges = graph.edges.filter(
         edge => !(
-          (edge.source === sourceId && edge.target === targetId) ||
-          (edge.source === targetId && edge.target === sourceId)
+          (edge.source === sourceId && edge.target === targetId)
         )
       );
       onGraphChange({ ...graph, edges: updatedEdges });
@@ -35,8 +34,7 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
     // Find existing edge
     const existingEdgeIndex = graph.edges.findIndex(
       edge => 
-        (edge.source === sourceId && edge.target === targetId) ||
-        (edge.source === targetId && edge.target === sourceId)
+        (edge.source === sourceId && edge.target === targetId)
     );
 
     if (existingEdgeIndex >= 0) {
@@ -62,8 +60,7 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
   const getWeight = (sourceId: string, targetId: string): number => {
     const edge = graph.edges.find(
       edge => 
-        (edge.source === sourceId && edge.target === targetId) ||
-        (edge.source === targetId && edge.target === sourceId)
+        (edge.source === sourceId && edge.target === targetId)
     );
     return edge ? edge.weight : 0;
   };
@@ -136,7 +133,6 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
           <thead>
             <tr>
               <th className="p-2 text-left text-sm font-medium text-muted-foreground border-b border-border">
-                {LABELS.MATRIX_FROM_TO}
               </th>
               {graph.nodes.map(node => (
                 <th 

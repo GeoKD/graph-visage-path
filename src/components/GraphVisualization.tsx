@@ -79,7 +79,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
 
   const handleDoubleClick = useCallback((event: React.MouseEvent) => {
     const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    if (!rect || graph.nodes.length >= 10) return;
 
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
@@ -98,6 +98,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
   }, [graph, onGraphChange]);
 
   const handleNodeClick = useCallback((nodeId: string) => {
+    if (dragState.isDragging) {dragState.isDragging = false; return;}
     onNodeSelect?.(nodeId);
   }, [onNodeSelect]);
 
@@ -184,6 +185,18 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
               opacity="0.3"
             />
           </pattern>
+          <marker
+            id="triangle"
+            viewBox="0 0 10 10"
+            refX="29"
+            refY="5"
+            markerUnits="strokeWidth"
+            markerWidth="5"
+            markerHeight="5"
+            orient="auto"
+          >
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill" />
+          </marker>
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
 
@@ -205,8 +218,9 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
                 x2={targetNode.x}
                 y2={targetNode.y}
                 stroke={getEdgeColor(edge)}
-                strokeWidth={getEdgeWidth(edge)}
-                className="transition-all duration-200"
+                fill={getEdgeColor(edge)}
+                strokeWidth={2}
+                markerEnd="url(#triangle)"
               />
               <circle
                 cx={midX}
@@ -215,7 +229,6 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
                 fill="hsl(var(--card))"
                 stroke={getEdgeColor(edge)}
                 strokeWidth="2"
-                className="transition-all duration-200"
               />
               <text
                 x={midX}

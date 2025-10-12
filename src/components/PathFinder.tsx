@@ -132,7 +132,7 @@ export const PathFinder: React.FC<PathFinderProps> = ({
               <div className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 <span className="text-sm font-medium">
-                  {LABELS.NO_PATH} {getNodeLabel(startNode)} and {getNodeLabel(endNode)}
+                  {LABELS.NO_PATH} {getNodeLabel(startNode)} и {getNodeLabel(endNode)}
                 </span>
               </div>
             )}
