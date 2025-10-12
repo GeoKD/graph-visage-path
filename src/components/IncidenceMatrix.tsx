@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Graph, Edge } from "@/types/graph";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
 
 interface IncidenceMatrixProps {
   graph: Graph;
@@ -13,6 +13,9 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
   graph,
   onGraphChange,
 }) => {
+  const [editingNodeId, setEditingNodeId] = useState<string | null>(null);
+  const [editLabel, setEditLabel] = useState<string>("");
+
   const handleWeightChange = (sourceId: string, targetId: string, weight: string) => {
     const numWeight = parseFloat(weight) || 0;
     
@@ -82,6 +85,27 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
     onGraphChange({ nodes: updatedNodes, edges: updatedEdges });
   };
 
+  const startEditingNode = (nodeId: string, currentLabel: string) => {
+    setEditingNodeId(nodeId);
+    setEditLabel(currentLabel);
+  };
+
+  const saveNodeLabel = () => {
+    if (editingNodeId && editLabel.trim()) {
+      const updatedNodes = graph.nodes.map(node =>
+        node.id === editingNodeId ? { ...node, label: editLabel.trim() } : node
+      );
+      onGraphChange({ ...graph, nodes: updatedNodes });
+    }
+    setEditingNodeId(null);
+    setEditLabel("");
+  };
+
+  const cancelEditingNode = () => {
+    setEditingNodeId(null);
+    setEditLabel("");
+  };
+
   if (graph.nodes.length === 0) {
     return (
       <div className="w-full h-full bg-card rounded-lg border border-border p-6 flex flex-col items-center justify-center text-center">
@@ -117,18 +141,60 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
               {graph.nodes.map(node => (
                 <th 
                   key={node.id} 
-                  className="p-2 text-center text-sm font-medium text-foreground border-b border-border min-w-[80px]"
+                  className="p-2 text-center text-sm font-medium text-foreground border-b border-border min-w-[100px]"
                 >
-                  <div className="flex items-center justify-center gap-2">
-                    {node.label}
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeNode(node.id)}
-                      className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                  <div className="flex items-center justify-center gap-1">
+                    {editingNodeId === node.id ? (
+                      <>
+                        <Input
+                          type="text"
+                          value={editLabel}
+                          onChange={(e) => setEditLabel(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveNodeLabel();
+                            if (e.key === 'Escape') cancelEditingNode();
+                          }}
+                          className="h-6 w-16 text-center text-xs"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={saveNodeLabel}
+                          className="h-6 w-6 p-0 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={cancelEditingNode}
+                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {node.label}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => startEditingNode(node.id, node.label)}
+                          className="h-6 w-6 p-0 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => removeNode(node.id)}
+                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </th>
               ))}
@@ -138,7 +204,51 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
             {graph.nodes.map(sourceNode => (
               <tr key={sourceNode.id} className="border-b border-border/50">
                 <td className="p-2 font-medium text-foreground bg-muted/30">
-                  {sourceNode.label}
+                  <div className="flex items-center gap-1">
+                    {editingNodeId === sourceNode.id ? (
+                      <>
+                        <Input
+                          type="text"
+                          value={editLabel}
+                          onChange={(e) => setEditLabel(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveNodeLabel();
+                            if (e.key === 'Escape') cancelEditingNode();
+                          }}
+                          className="h-6 w-16 text-center text-xs"
+                          autoFocus
+                        />
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={saveNodeLabel}
+                          className="h-6 w-6 p-0 hover:bg-primary hover:text-primary-foreground"
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={cancelEditingNode}
+                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        {sourceNode.label}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => startEditingNode(sourceNode.id, sourceNode.label)}
+                          className="h-6 w-6 p-0 hover:bg-primary hover:text-primary-foreground ml-1"
+                        >
+                          <Edit2 className="h-3 w-3" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </td>
                 {graph.nodes.map(targetNode => {
                   const isDisabled = sourceNode.id === targetNode.id;
