@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Network, Grid3X3, Calculator, Plus, Trash2, Edit } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { LABELS } from "@/constants/labels";
 
 export const GraphApp: React.FC = () => {
   const { toast } = useToast();
@@ -168,23 +169,23 @@ export const GraphApp: React.FC = () => {
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Graph Theory Visualizer
+            {LABELS.APP_TITLE}
           </h1>
           <p className="text-lg text-muted-foreground">
-            Interactive graph manipulation with Dijkstra's shortest path algorithm
+            {LABELS.APP_SUBTITLE}
           </p>
           <div className="flex justify-center gap-2 mt-4">
             <Badge variant="secondary" className="flex items-center gap-1">
               <Network className="h-3 w-3" />
-              Visual Graph
+              {LABELS.BADGE_VISUAL_GRAPH}
             </Badge>
             <Badge variant="secondary" className="flex items-center gap-1">
               <Grid3X3 className="h-3 w-3" />
-              Incidence Matrix
+              {LABELS.BADGE_INCIDENCE_MATRIX}
             </Badge>
             <Badge variant="secondary" className="flex items-center gap-1">
               <Calculator className="h-3 w-3" />
-              Dijkstra's Algorithm
+              {LABELS.BADGE_DIJKSTRA}
             </Badge>
           </div>
         </div>
@@ -197,10 +198,10 @@ export const GraphApp: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Network className="h-5 w-5" />
-                  Graph Visualization
+                  {LABELS.GRAPH_VISUALIZATION}
                 </CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Double-click to add nodes • Drag to move • Click to select
+                  {LABELS.GRAPH_INSTRUCTIONS}
                 </p>
               </CardHeader>
               <CardContent className="h-[calc(100%-100px)]">
@@ -223,17 +224,17 @@ export const GraphApp: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Edit className="h-5 w-5" />
-                    Edge Controls
+                    {LABELS.EDGE_CONTROLS}
                   </CardTitle>
                   <p className="text-sm text-muted-foreground">
                     {selectedNodes.length === 2 
-                      ? `Selected: ${getSelectedNodesLabels().join(" ↔ ")}` 
-                      : `Selected: ${getSelectedNodesLabels().join(", ")} (select 2 nodes)`}
+                      ? `${LABELS.SELECTED} ${getSelectedNodesLabels().join(" ↔ ")}` 
+                      : `${LABELS.SELECTED} ${getSelectedNodesLabels().join(", ")} ${LABELS.SELECT_TWO_NODES}`}
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edge-weight">Weight</Label>
+                    <Label htmlFor="edge-weight">{LABELS.WEIGHT}</Label>
                     <Input
                       id="edge-weight"
                       type="number"
@@ -241,7 +242,7 @@ export const GraphApp: React.FC = () => {
                       step="0.1"
                       value={edgeWeight}
                       onChange={(e) => setEdgeWeight(e.target.value)}
-                      placeholder="Enter weight"
+                      placeholder={LABELS.ENTER_WEIGHT}
                     />
                   </div>
                   
@@ -250,17 +251,17 @@ export const GraphApp: React.FC = () => {
                       {!getExistingEdge() ? (
                         <Button onClick={handleAddEdge} className="w-full">
                           <Plus className="h-4 w-4 mr-2" />
-                          Add Edge
+                          {LABELS.ADD_EDGE}
                         </Button>
                       ) : (
                         <div className="grid grid-cols-2 gap-2">
                           <Button onClick={handleChangeWeight} variant="outline">
                             <Edit className="h-4 w-4 mr-2" />
-                            Change Weight
+                            {LABELS.CHANGE_WEIGHT}
                           </Button>
                           <Button onClick={handleDeleteEdge} variant="destructive">
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Delete Edge
+                            {LABELS.DELETE_EDGE}
                           </Button>
                         </div>
                       )}
@@ -279,20 +280,20 @@ export const GraphApp: React.FC = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Grid3X3 className="h-5 w-5" />
-                  Graph Statistics
+                  {LABELS.STATISTICS}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Nodes:</span>
+                  <span className="text-sm text-muted-foreground">{LABELS.NODES}</span>
                   <Badge variant="outline">{graph.nodes.length}</Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Edges:</span>
+                  <span className="text-sm text-muted-foreground">{LABELS.EDGES}</span>
                   <Badge variant="outline">{graph.edges.length}</Badge>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Selected:</span>
+                  <span className="text-sm text-muted-foreground">{LABELS.SELECTED}</span>
                   <Badge variant="outline">{selectedNodes.length}</Badge>
                 </div>
               </CardContent>
@@ -305,10 +306,10 @@ export const GraphApp: React.FC = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Grid3X3 className="h-5 w-5" />
-              Incidence Matrix
+              {LABELS.INCIDENCE_MATRIX}
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Edit weights directly in the matrix • Set to 0 to remove edges
+              {LABELS.MATRIX_INSTRUCTIONS}
             </p>
           </CardHeader>
           <CardContent>

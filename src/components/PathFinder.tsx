@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Route, Navigation, AlertCircle } from "lucide-react";
 import { dijkstra } from "@/lib/dijkstra";
+import { LABELS } from "@/constants/labels";
 
 interface PathFinderProps {
   graph: Graph;
@@ -42,18 +43,18 @@ export const PathFinder: React.FC<PathFinderProps> = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Route className="h-5 w-5" />
-          Shortest Path Finder
+          {LABELS.SHORTEST_PATH}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">
-              Start Node
+              {LABELS.START_NODE}
             </label>
             <Select value={startNode} onValueChange={setStartNode}>
               <SelectTrigger>
-                <SelectValue placeholder="Select start" />
+                <SelectValue placeholder={LABELS.SELECT_START} />
               </SelectTrigger>
               <SelectContent>
                 {graph.nodes.map(node => (
@@ -67,11 +68,11 @@ export const PathFinder: React.FC<PathFinderProps> = ({
           
           <div>
             <label className="text-sm font-medium text-foreground mb-2 block">
-              End Node
+              {LABELS.END_NODE}
             </label>
             <Select value={endNode} onValueChange={setEndNode}>
               <SelectTrigger>
-                <SelectValue placeholder="Select end" />
+                <SelectValue placeholder={LABELS.SELECT_END} />
               </SelectTrigger>
               <SelectContent>
                 {graph.nodes.map(node => (
@@ -91,10 +92,10 @@ export const PathFinder: React.FC<PathFinderProps> = ({
             className="flex items-center gap-2"
           >
             <Navigation className="h-4 w-4" />
-            Find Path
+            {LABELS.FIND_PATH}
           </Button>
           <Button onClick={clearPath} variant="outline">
-            Clear
+            {LABELS.CLEAR}
           </Button>
         </div>
 
@@ -104,15 +105,15 @@ export const PathFinder: React.FC<PathFinderProps> = ({
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="bg-primary text-primary-foreground">
-                    Path Found
+                    {LABELS.PATH_FOUND}
                   </Badge>
                   <span className="text-sm font-medium">
-                    Distance: {result.distance.toFixed(2)}
+                    {LABELS.DISTANCE} {result.distance.toFixed(2)}
                   </span>
                 </div>
                 
                 <div>
-                  <p className="text-sm font-medium text-foreground mb-2">Path:</p>
+                  <p className="text-sm font-medium text-foreground mb-2">{LABELS.PATH}</p>
                   <div className="flex flex-wrap gap-2">
                     {result.path.map((nodeId, index) => (
                       <React.Fragment key={nodeId}>
@@ -131,7 +132,7 @@ export const PathFinder: React.FC<PathFinderProps> = ({
               <div className="flex items-center gap-2 text-destructive">
                 <AlertCircle className="h-4 w-4" />
                 <span className="text-sm font-medium">
-                  No path exists between {getNodeLabel(startNode)} and {getNodeLabel(endNode)}
+                  {LABELS.NO_PATH} {getNodeLabel(startNode)} and {getNodeLabel(endNode)}
                 </span>
               </div>
             )}

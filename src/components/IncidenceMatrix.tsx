@@ -3,6 +3,7 @@ import { Graph, Edge } from "@/types/graph";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Edit2, Check, X } from "lucide-react";
+import { LABELS } from "@/constants/labels";
 
 interface IncidenceMatrixProps {
   graph: Graph;
@@ -109,13 +110,13 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
   if (graph.nodes.length === 0) {
     return (
       <div className="w-full h-full bg-card rounded-lg border border-border p-6 flex flex-col items-center justify-center text-center">
-        <h3 className="text-lg font-semibold text-foreground mb-2">No Nodes</h3>
+        <h3 className="text-lg font-semibold text-foreground mb-2">{LABELS.NO_NODES}</h3>
         <p className="text-muted-foreground mb-4">
-          Double-click on the graph to create nodes or use the button below
+          {LABELS.NO_NODES_MESSAGE}
         </p>
         <Button onClick={addNode} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          Add Node
+          {LABELS.ADD_NODE}
         </Button>
       </div>
     );
@@ -124,10 +125,9 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
   return (
     <div className="w-full h-full bg-card rounded-lg border border-border p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Incidence Matrix</h3>
         <Button onClick={addNode} size="sm" className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
-          Add Node
+          {LABELS.ADD_NODE}
         </Button>
       </div>
       
@@ -136,7 +136,7 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
           <thead>
             <tr>
               <th className="p-2 text-left text-sm font-medium text-muted-foreground border-b border-border">
-                From / To
+                {LABELS.MATRIX_FROM_TO}
               </th>
               {graph.nodes.map(node => (
                 <th 
@@ -204,51 +204,7 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
             {graph.nodes.map(sourceNode => (
               <tr key={sourceNode.id} className="border-b border-border/50">
                 <td className="p-2 font-medium text-foreground bg-muted/30">
-                  <div className="flex items-center gap-1">
-                    {editingNodeId === sourceNode.id ? (
-                      <>
-                        <Input
-                          type="text"
-                          value={editLabel}
-                          onChange={(e) => setEditLabel(e.target.value)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') saveNodeLabel();
-                            if (e.key === 'Escape') cancelEditingNode();
-                          }}
-                          className="h-6 w-16 text-center text-xs"
-                          autoFocus
-                        />
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={saveNodeLabel}
-                          className="h-6 w-6 p-0 hover:bg-primary hover:text-primary-foreground"
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={cancelEditingNode}
-                          className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground"
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        {sourceNode.label}
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => startEditingNode(sourceNode.id, sourceNode.label)}
-                          className="h-6 w-6 p-0 hover:bg-primary hover:text-primary-foreground ml-1"
-                        >
-                          <Edit2 className="h-3 w-3" />
-                        </Button>
-                      </>
-                    )}
-                  </div>
+                  {sourceNode.label}
                 </td>
                 {graph.nodes.map(targetNode => {
                   const isDisabled = sourceNode.id === targetNode.id;
@@ -264,7 +220,7 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
                         onChange={(e) => handleWeightChange(sourceNode.id, targetNode.id, e.target.value)}
                         disabled={isDisabled}
                         className="w-full text-center h-8"
-                        placeholder="0"
+                        placeholder={LABELS.PLACEHOLDER_ZERO}
                       />
                     </td>
                   );
