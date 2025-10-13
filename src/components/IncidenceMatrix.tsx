@@ -23,28 +23,30 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
     if (numWeight <= 0) {
       // Remove edge if weight is 0 or invalid
       const updatedEdges = graph.edges.filter(
-        edge => !(
-          (edge.source === sourceId && edge.target === targetId)
-        )
+        edge => !(edge.source === sourceId && edge.target === targetId)
       );
       onGraphChange({ ...graph, edges: updatedEdges });
       return;
     }
 
-    // Find existing edge
-    const existingEdgeIndex = graph.edges.findIndex(
-      edge => 
-        (edge.source === sourceId && edge.target === targetId)
+    // Check if reverse edge exists
+    const reverseEdge = graph.edges.find(
+      edge => edge.source === targetId && edge.target === sourceId
+    );
+
+    let updatedEdges = [...graph.edges];
+
+    // Find existing edge in this direction
+    const existingEdgeIndex = updatedEdges.findIndex(
+      edge => edge.source === sourceId && edge.target === targetId
     );
 
     if (existingEdgeIndex >= 0) {
       // Update existing edge
-      const updatedEdges = [...graph.edges];
       updatedEdges[existingEdgeIndex] = {
         ...updatedEdges[existingEdgeIndex],
         weight: numWeight,
       };
-      onGraphChange({ ...graph, edges: updatedEdges });
     } else {
       // Create new edge
       const newEdge: Edge = {
@@ -53,8 +55,23 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
         target: targetId,
         weight: numWeight,
       };
-      onGraphChange({ ...graph, edges: [...graph.edges, newEdge] });
+      updatedEdges.push(newEdge);
     }
+
+    // If reverse edge exists, sync its weight
+    if (reverseEdge) {
+      const reverseEdgeIndex = updatedEdges.findIndex(
+        edge => edge.source === targetId && edge.target === sourceId
+      );
+      if (reverseEdgeIndex >= 0) {
+        updatedEdges[reverseEdgeIndex] = {
+          ...updatedEdges[reverseEdgeIndex],
+          weight: numWeight,
+        };
+      }
+    }
+
+    onGraphChange({ ...graph, edges: updatedEdges });
   };
 
   const getWeight = (sourceId: string, targetId: string): number => {

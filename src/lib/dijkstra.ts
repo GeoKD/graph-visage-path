@@ -34,13 +34,13 @@ export function dijkstra(graph: Graph, startId: string, endId: string): PathResu
 
     unvisited.delete(currentNode);
 
-    // Update distances to neighbors
-    const neighbors = graph.edges.filter(
-      edge => edge.source === currentNode || edge.target === currentNode
+    // Update distances to neighbors (directed graph: only follow edges from source)
+    const outgoingEdges = graph.edges.filter(
+      edge => edge.source === currentNode
     );
 
-    for (const edge of neighbors) {
-      const neighborId = edge.source === currentNode ? edge.target : edge.source;
+    for (const edge of outgoingEdges) {
+      const neighborId = edge.target;
       
       if (unvisited.has(neighborId)) {
         const newDistance = distances[currentNode] + edge.weight;
