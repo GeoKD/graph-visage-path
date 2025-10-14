@@ -1,19 +1,20 @@
 import { Graph, PathResult } from "@/types/graph";
 
 export function dijkstra(graph: Graph, startId: string, endId: string): PathResult {
-  const nodes = graph.nodes.map(n => n.id);
-  const distances: Record<string, number> = {};
-  const previous: Record<string, string | null> = {};
-  const unvisited = new Set(nodes);
+  const nodes = graph.nodes.map(n => n.id); // Вершины
+  const distances: Record<string, number> = {}; // Дистанции
+  const previous: Record<string, string | null> = {}; // Родительские вершины
+  const unvisited = new Set(nodes); // Не отмеченные вершины (не посещенные)
 
-  // Initialize distances
+  // Начальные значения дистанции
   nodes.forEach(nodeId => {
-    distances[nodeId] = nodeId === startId ? 0 : Infinity;
-    previous[nodeId] = null;
+    distances[nodeId] = nodeId === startId ? 0 : Infinity; // Для начальной вершины
+    previous[nodeId] = null;                               // значение 0, для остальных ထ
   });
 
   while (unvisited.size > 0) {
-    // Find unvisited node with minimum distance
+
+    /* --Из непосещенных вершин находим вершину с минимальной дистанцией-- */
     let currentNode: string | null = null;
     let minDistance = Infinity;
     
@@ -24,48 +25,64 @@ export function dijkstra(graph: Graph, startId: string, endId: string): PathResu
       }
     }
 
+    // Если не найдена следующая вершина...
     if (!currentNode || distances[currentNode] === Infinity) {
-      break; // No path exists
+      break; // Пути не существует
     }
 
     if (currentNode === endId) {
-      break; // Reached target
+      break; // Достигли конечной
     }
 
-    unvisited.delete(currentNode);
+    /* --Обновляем минимальные дистанции к соседним вершинам-- */
 
-    // Update distances to neighbors (directed graph: only follow edges from source)
+    // Находим соседние вершины
     const outgoingEdges = graph.edges.filter(
       edge => edge.source === currentNode
     );
 
     for (const edge of outgoingEdges) {
-      const neighborId = edge.target;
+      const neighborId = edge.target; // Соседняя вершина
       
+      // Если вершина не помечена как посещенная...
       if (unvisited.has(neighborId)) {
-        const newDistance = distances[currentNode] + edge.weight;
+        // Расчитываем дистанцию к соседней вершине
+        const newDistance = distances[currentNode] + edge.weight; 
         
+        // Если дистанция меньше минимальной, присвоенной ранее...
         if (newDistance < distances[neighborId]) {
+          // Присваиваем минимальную дистанцию вершине
           distances[neighborId] = newDistance;
+          // Отмечаем текущую вершину как родительскую для соседней
           previous[neighborId] = currentNode;
         }
       }
     }
+
+    // Отмечаем вершину как посещенную
+    unvisited.delete(currentNode);
   }
 
-  // Reconstruct path
+  /* --Рекоструируем минимальный путь-- */
+
+  // Если не найден минимальный путь к конечной вершине...
   if (distances[endId] === Infinity) {
+    // Путь не найден
     return { found: false, distance: 0, path: [] };
   }
 
   const path: string[] = [];
   let current: string | null = endId;
   
+  // Проходим по родительским вершинам от конечной вершины и добавляем в начало массива
+  // КОНЕЧНАЯ - B - C - НАЧАЛЬНАЯ
+  // КОНЕЧНАЯ -> B - КОНЕЧНАЯ -> C - B - КОНЕЧНАЯ -> НАЧАЛЬНАЯ - C - B - КОНЕЧНАЯ 
   while (current !== null) {
     path.unshift(current);
     current = previous[current];
   }
 
+  // Путь найден
   return {
     found: true,
     distance: distances[endId],
