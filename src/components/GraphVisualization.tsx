@@ -202,7 +202,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
 
           // Calculate offset for bidirectional edges
           const hasReverseEdge = reverseEdge !== undefined;
-          const offset = hasReverseEdge ? 15 : 0;
+          const offset = hasReverseEdge ? 8 : 0;
 
           // Calculate edge direction vector
           const dx = targetNode.x - sourceNode.x;
@@ -213,11 +213,18 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
           const perpX = -dy / length;
           const perpY = dx / length;
 
-          // Start and end points with offset
-          const x1 = sourceNode.x + perpX * offset;
-          const y1 = sourceNode.y + perpY * offset;
-          const x2 = targetNode.x + perpX * offset;
-          const y2 = targetNode.y + perpY * offset;
+          // Normalized direction vector
+          const dirX = dx / length;
+          const dirY = dy / length;
+
+          // Node radius
+          const nodeRadius = 18;
+
+          // Start and end points with offset and adjusted for node radius
+          const x1 = sourceNode.x + perpX * offset + dirX * nodeRadius;
+          const y1 = sourceNode.y + perpY * offset + dirY * nodeRadius;
+          const x2 = targetNode.x + perpX * offset - dirX * nodeRadius;
+          const y2 = targetNode.y + perpY * offset - dirY * nodeRadius;
 
           // Calculate quadratic curve control point
           const midX = (x1 + x2) / 2 + perpX * offset;
@@ -237,11 +244,11 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
                 <marker
                   id={`arrow-${edge.id}`}
                   viewBox="0 0 10 10"
-                  refX="9"
+                  refX="10"
                   refY="5"
                   markerUnits="strokeWidth"
-                  markerWidth="8"
-                  markerHeight="8"
+                  markerWidth="6"
+                  markerHeight="6"
                   orient="auto"
                 >
                   <path d="M 0 0 L 10 5 L 0 10 z" fill={getEdgeColor(edge)} />
