@@ -29,11 +29,6 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
       return;
     }
 
-    // Check if reverse edge exists
-    const reverseEdge = graph.edges.find(
-      edge => edge.source === targetId && edge.target === sourceId
-    );
-
     let updatedEdges = [...graph.edges];
 
     // Find existing edge in this direction
@@ -56,19 +51,6 @@ export const IncidenceMatrix: React.FC<IncidenceMatrixProps> = ({
         weight: numWeight,
       };
       updatedEdges.push(newEdge);
-    }
-
-    // If reverse edge exists, sync its weight
-    if (reverseEdge) {
-      const reverseEdgeIndex = updatedEdges.findIndex(
-        edge => edge.source === targetId && edge.target === sourceId
-      );
-      if (reverseEdgeIndex >= 0) {
-        updatedEdges[reverseEdgeIndex] = {
-          ...updatedEdges[reverseEdgeIndex],
-          weight: numWeight,
-        };
-      }
     }
 
     onGraphChange({ ...graph, edges: updatedEdges });

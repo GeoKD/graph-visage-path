@@ -38,4 +38,9 @@ export const LABELS = {
   // Placeholders
   ENTER_WEIGHT: "Enter weight",
   PLACEHOLDER_ZERO: "0",
+  
+  // Import/Export
+  IMPORT_GRAPH: "Импортировать граф",
+  IMPORT_SUCCESS: "Граф импортирован успешно",
+  IMPORT_ERROR: "Ошибка импорта графа. Проверьте формат файла.",
 } as const;

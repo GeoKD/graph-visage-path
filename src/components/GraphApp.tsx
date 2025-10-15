@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Graph } from "@/types/graph";
+import React, { useState, useRef } from "react";
+import { Graph, Node, Edge } from "@/types/graph";
 import { GraphVisualization } from "./GraphVisualization";
 import { IncidenceMatrix } from "./IncidenceMatrix";
 import { PathFinder } from "./PathFinder";
@@ -8,12 +8,13 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Network, Grid3X3, Calculator, Plus, Trash2, Edit } from "lucide-react";
+import { Network, Grid3X3, Calculator, Plus, Trash2, Edit, Upload } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LABELS } from "@/constants/labels";
 
 export const GraphApp: React.FC = () => {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [graph, setGraph] = useState<Graph>({
     nodes: [
       { id: "node1", x: 150, y: 100, label: "A" },
@@ -161,23 +162,87 @@ export const GraphApp: React.FC = () => {
       ),
     }));
 
-    // const reversedExistingEdge = getReversedExistingEdge()
-
-    // if (reversedExistingEdge) {
-    //   setGraph(prev => ({
-    //   ...prev,
-    //   edges: prev.edges.map(edge => 
-    //     edge.id === reversedExistingEdge.id 
-    //       ? { ...edge, weight: weight }
-    //       : edge
-    //   ),
-    //   }));
-    // }
-
     toast({
       title: "Вес изменен",
       description: `Изменен вес между ${getSelectedNodesLabels().join(" и ")} на ${weight}.`,
     });
+  };
+
+  const handleImportGraph = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const lines = content.split('\n').map(line => line.trim()).filter(line => line);
+        
+        const nodes: Node[] = [];
+        const edges: Edge[] = [];
+        let section: 'nodes' | 'edges' | null = null;
+
+        for (const line of lines) {
+          if (line.toLowerCase() === 'nodes:') {
+            section = 'nodes';
+            continue;
+          }
+          if (line.toLowerCase() === 'edges:') {
+            section = 'edges';
+            continue;
+          }
+
+          if (section === 'nodes') {
+            const parts = line.split(/\s+/);
+            if (parts.length >= 3) {
+              const [label, x, y] = parts;
+              nodes.push({
+                id: `node-${Date.now()}-${nodes.length}`,
+                x: parseFloat(x),
+                y: parseFloat(y),
+                label: label,
+              });
+            }
+          } else if (section === 'edges') {
+            const parts = line.split(/\s+/);
+            if (parts.length >= 3) {
+              const [sourceLabel, targetLabel, weight] = parts;
+              const sourceNode = nodes.find(n => n.label === sourceLabel);
+              const targetNode = nodes.find(n => n.label === targetLabel);
+              
+              if (sourceNode && targetNode) {
+                edges.push({
+                  id: `edge-${Date.now()}-${edges.length}`,
+                  source: sourceNode.id,
+                  target: targetNode.id,
+                  weight: parseFloat(weight),
+                });
+              }
+            }
+          }
+        }
+
+        if (nodes.length > 0) {
+          setGraph({ nodes, edges });
+          toast({
+            title: LABELS.IMPORT_SUCCESS,
+            description: `Импортировано ${nodes.length} вершин и ${edges.length} дуг.`,
+          });
+        } else {
+          throw new Error('No nodes found');
+        }
+      } catch (error) {
+        toast({
+          title: LABELS.IMPORT_ERROR,
+          variant: "destructive",
+        });
+      }
+    };
+
+    reader.readAsText(file);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -191,6 +256,19 @@ export const GraphApp: React.FC = () => {
           <p className="text-lg text-muted-foreground">
             {LABELS.APP_SUBTITLE}
           </p>
+          <div className="flex justify-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt"
+              onChange={handleImportGraph}
+              className="hidden"
+            />
+            <Button onClick={() => fileInputRef.current?.click()} variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              {LABELS.IMPORT_GRAPH}
+            </Button>
+          </div>
         </div>
 
         {/* Main Content */}
