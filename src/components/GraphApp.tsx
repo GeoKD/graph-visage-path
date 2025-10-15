@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Network, Grid3X3, Calculator, Plus, Trash2, Edit, Upload } from "lucide-react";
+import { Network, Grid3X3, Calculator, Plus, Trash2, Edit, Upload, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LABELS } from "@/constants/labels";
 
@@ -168,6 +168,37 @@ export const GraphApp: React.FC = () => {
     });
   };
 
+  const handleExportGraph = () => {
+    let content = "Nodes:\n";
+    graph.nodes.forEach(node => {
+      content += `${node.label} ${node.x} ${node.y}\n`;
+    });
+    
+    content += "\nEdges:\n";
+    graph.edges.forEach(edge => {
+      const sourceNode = graph.nodes.find(n => n.id === edge.source);
+      const targetNode = graph.nodes.find(n => n.id === edge.target);
+      if (sourceNode && targetNode) {
+        content += `${sourceNode.label} ${targetNode.label} ${edge.weight}\n`;
+      }
+    });
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'graph.txt';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: LABELS.EXPORT_SUCCESS,
+      description: `Экспортировано ${graph.nodes.length} вершин и ${graph.edges.length} дуг.`,
+    });
+  };
+
   const handleImportGraph = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -256,7 +287,7 @@ export const GraphApp: React.FC = () => {
           <p className="text-lg text-muted-foreground">
             {LABELS.APP_SUBTITLE}
           </p>
-          <div className="flex justify-center">
+          <div className="flex justify-center gap-2">
             <input
               ref={fileInputRef}
               type="file"
@@ -267,6 +298,10 @@ export const GraphApp: React.FC = () => {
             <Button onClick={() => fileInputRef.current?.click()} variant="outline">
               <Upload className="h-4 w-4 mr-2" />
               {LABELS.IMPORT_GRAPH}
+            </Button>
+            <Button onClick={handleExportGraph} variant="outline">
+              <Download className="h-4 w-4 mr-2" />
+              {LABELS.EXPORT_GRAPH}
             </Button>
           </div>
         </div>

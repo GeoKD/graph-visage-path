@@ -43,4 +43,6 @@ export const LABELS = {
   IMPORT_GRAPH: "Импортировать граф",
   IMPORT_SUCCESS: "Граф импортирован успешно",
   IMPORT_ERROR: "Ошибка импорта графа. Проверьте формат файла.",
+  EXPORT_GRAPH: "Экспортировать граф",
+  EXPORT_SUCCESS: "Граф экспортирован успешно",
 } as const;
