@@ -185,18 +185,6 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
               opacity="0.3"
             />
           </pattern>
-          <marker
-            id="triangle"
-            viewBox="0 0 10 10"
-            refX="29"
-            refY="5"
-            markerUnits="strokeWidth"
-            markerWidth="5"
-            markerHeight="5"
-            orient="auto"
-          >
-            <path d="M 0 0 L 10 5 L 0 10 z" fill="context-fill" />
-          </marker>
         </defs>
         <rect width="100%" height="100%" fill="url(#grid)" />
 
@@ -207,32 +195,76 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
           
           if (!sourceNode || !targetNode) return null;
 
-          const midX = (sourceNode.x + targetNode.x) / 2;
-          const midY = (sourceNode.y + targetNode.y) / 2;
+          // Check if there's a reverse edge
+          const reverseEdge = graph.edges.find(
+            e => e.source === edge.target && e.target === edge.source
+          );
+
+          // Calculate offset for bidirectional edges
+          const hasReverseEdge = reverseEdge !== undefined;
+          const offset = hasReverseEdge ? 15 : 0;
+
+          // Calculate edge direction vector
+          const dx = targetNode.x - sourceNode.x;
+          const dy = targetNode.y - sourceNode.y;
+          const length = Math.sqrt(dx * dx + dy * dy);
+          
+          // Normalized perpendicular vector
+          const perpX = -dy / length;
+          const perpY = dx / length;
+
+          // Start and end points with offset
+          const x1 = sourceNode.x + perpX * offset;
+          const y1 = sourceNode.y + perpY * offset;
+          const x2 = targetNode.x + perpX * offset;
+          const y2 = targetNode.y + perpY * offset;
+
+          // Calculate quadratic curve control point
+          const midX = (x1 + x2) / 2 + perpX * offset;
+          const midY = (y1 + y2) / 2 + perpY * offset;
+
+          // Calculate label position (on the curve)
+          const labelX = (x1 + x2) / 2 + perpX * offset;
+          const labelY = (y1 + y2) / 2 + perpY * offset;
+
+          const pathD = hasReverseEdge
+            ? `M ${x1} ${y1} Q ${midX} ${midY}, ${x2} ${y2}`
+            : `M ${x1} ${y1} L ${x2} ${y2}`;
 
           return (
             <g key={edge.id}>
-              <line
-                x1={sourceNode.x}
-                y1={sourceNode.y}
-                x2={targetNode.x}
-                y2={targetNode.y}
+              <defs>
+                <marker
+                  id={`arrow-${edge.id}`}
+                  viewBox="0 0 10 10"
+                  refX="9"
+                  refY="5"
+                  markerUnits="strokeWidth"
+                  markerWidth="8"
+                  markerHeight="8"
+                  orient="auto"
+                >
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill={getEdgeColor(edge)} />
+                </marker>
+              </defs>
+              <path
+                d={pathD}
                 stroke={getEdgeColor(edge)}
-                fill={getEdgeColor(edge)}
-                strokeWidth={2}
-                markerEnd="url(#triangle)"
+                strokeWidth={getEdgeWidth(edge)}
+                fill="none"
+                markerEnd={`url(#arrow-${edge.id})`}
               />
               <circle
-                cx={midX}
-                cy={midY}
+                cx={labelX}
+                cy={labelY}
                 r="12"
                 fill="hsl(var(--card))"
                 stroke={getEdgeColor(edge)}
                 strokeWidth="2"
               />
               <text
-                x={midX}
-                y={midY}
+                x={labelX}
+                y={labelY}
                 textAnchor="middle"
                 dy="0.35em"
                 className="text-xs font-semibold fill-foreground pointer-events-none"
