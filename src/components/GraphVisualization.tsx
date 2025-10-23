@@ -60,9 +60,12 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
     const newX = mouseX - dragState.offset.x;
     const newY = mouseY - dragState.offset.y;
 
+    const svgWidth = rect.width;
+    const svgHeight = rect.height;
+
     const updatedNodes = graph.nodes.map(node =>
       node.id === dragState.nodeId
-        ? { ...node, x: Math.max(20, Math.min(580, newX)), y: Math.max(20, Math.min(380, newY)) }
+        ? { ...node, x: newX, y: newY }
         : node
     );
 
@@ -79,7 +82,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
 
   const handleDoubleClick = useCallback((event: React.MouseEvent) => {
     const rect = svgRef.current?.getBoundingClientRect();
-    if (!rect || graph.nodes.length >= 10) return;
+    if (!rect || graph.nodes.length >= 20) return;
 
     const mouseX = event.clientX - rect.left;
     const mouseY = event.clientY - rect.top;
@@ -146,7 +149,7 @@ export const GraphVisualization: React.FC<GraphVisualizationProps> = ({
     for (let i = 0; i < highlightedPath.length - 1; i++) {
       const current = highlightedPath[i];
       const next = highlightedPath[i + 1];
-      if ((edge.source === current && edge.target === next) || (edge.source === next && edge.target === current)) {
+      if (edge.source === current && edge.target === next) {
         return true;
       }
     }
