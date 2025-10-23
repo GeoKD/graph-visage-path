@@ -3,7 +3,9 @@ import { Graph, Node, Edge } from "@/types/graph";
 import { GraphVisualization } from "./GraphVisualization";
 import { IncidenceMatrix } from "./IncidenceMatrix";
 import { PathFinder } from "./PathFinder";
+import { AlgorithmComparison } from "./AlgorithmComparison";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -280,7 +282,7 @@ export const GraphApp: React.FC = () => {
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="text-center space-y-2">
+        <div className="text-center space-y-2 mb-6">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
             {LABELS.APP_TITLE}
           </h1>
@@ -306,8 +308,15 @@ export const GraphApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Tabs defaultValue="editor" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+            <TabsTrigger value="editor">{LABELS.TAB_EDITOR}</TabsTrigger>
+            <TabsTrigger value="visualization">{LABELS.TAB_VISUALIZATION}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="editor" className="space-y-6">
+            {/* Main Content */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Graph Visualization */}
           <div className="lg:col-span-2">
             <Card className="h-[500px]">
@@ -390,8 +399,8 @@ export const GraphApp: React.FC = () => {
           </div>
         </div>
 
-        {/* Incidence Matrix */}
-        <Card>
+            {/* Incidence Matrix */}
+            <Card>
           <CardContent>
             <div className="h-80">
               <IncidenceMatrix
@@ -401,6 +410,38 @@ export const GraphApp: React.FC = () => {
             </div>
           </CardContent>
         </Card>
+          </TabsContent>
+
+          <TabsContent value="visualization" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Read-only Graph Visualization */}
+              <div className="lg:col-span-2">
+                <Card className="h-[500px]">
+                  <CardHeader>
+                    <CardTitle>{LABELS.GRAPH_VISUALIZATION}</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      Только для визуализации (без редактирования)
+                    </p>
+                  </CardHeader>
+                  <CardContent className="h-[calc(100%-100px)]">
+                    <GraphVisualization
+                      graph={graph}
+                      onGraphChange={() => {}} 
+                      highlightedPath={[]}
+                      selectedNodes={[]}
+                      onNodeSelect={() => {}}
+                    />
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Algorithm Comparison */}
+              <div>
+                <AlgorithmComparison graph={graph} />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

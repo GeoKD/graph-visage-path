@@ -45,4 +45,22 @@ export const LABELS = {
   IMPORT_ERROR: "Ошибка импорта графа. Проверьте формат файла.",
   EXPORT_GRAPH: "Экспортировать граф",
   EXPORT_SUCCESS: "Граф экспортирован успешно",
+  
+  // Algorithms
+  ALGORITHM: "Алгоритм",
+  DIJKSTRA: "Алгоритм Дейкстры",
+  FLOYD: "Алгоритм Флойда-Уоршелла",
+  ALL_PAIRS_PATHS: "Все пары кратчайших путей",
+  
+  // Tabs
+  TAB_EDITOR: "Редактор",
+  TAB_VISUALIZATION: "Визуализация",
+  
+  // Comparison
+  ALGORITHM_COMPARISON: "Сравнение алгоритмов",
+  RUN_COMPARISON: "Запустить сравнение",
+  PAIRS_FOUND: "пар найдено",
+  WINNER: "Победитель",
+  FASTER: "быстрее",
+  ALL_SHORTEST_PATHS: "Все кратчайшие пути",
 } as const;
