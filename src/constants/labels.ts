@@ -70,4 +70,9 @@ export const LABELS = {
   GENERATE_GRAPH: "Сгенерировать граф",
   NODES_GENERATED: "вершин сгенерировано",
   EDGES_GENERATED: "дуг сгенерировано",
+  
+  // Comparison Controls
+  COMPARISON_CONTROLS: "Управление сравнением",
+  COMPARE_USER_GRAPH: "Сравнить с пользовательским графом",
+  COMPARE_RANDOM_GRAPH: "Сравнить со случайным графом",
 } as const;

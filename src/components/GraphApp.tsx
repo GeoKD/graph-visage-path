@@ -35,8 +35,9 @@ export const GraphApp: React.FC = () => {
   const [highlightedPath, setHighlightedPath] = useState<string[]>([]);
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const [edgeWeight, setEdgeWeight] = useState<string>("1");
-  const [randomGraph, setRandomGraph] = useState<Graph | null>(null);
+  const [comparisonGraph, setComparisonGraph] = useState<Graph | null>(null);
   const [nodeCount, setNodeCount] = useState<string>("10");
+  const [showComparison, setShowComparison] = useState(false);
 
   const handleNodeSelect = (nodeId: string) => {
     setSelectedNodes(prev => {
@@ -288,65 +289,88 @@ export const GraphApp: React.FC = () => {
         description: "Введите число от 2 до 50",
         variant: "destructive",
       });
-      return;
+      return null;
     }
 
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     
-    // Generate nodes in a circular layout to fit on screen
-    const centerX = 300;
-    const centerY = 200;
-    const radius = Math.min(150, 100 + count * 2);
+    // Generate nodes using grid-based layout with randomization
+    const cols = Math.ceil(Math.sqrt(count * 1.5));
+    const rows = Math.ceil(count / cols);
+    const cellWidth = 500 / (cols + 1);
+    const cellHeight = 320 / (rows + 1);
+    const marginX = 50;
+    const marginY = 40;
     
     for (let i = 0; i < count; i++) {
-      const angle = (i / count) * 2 * Math.PI;
-      const x = centerX + radius * Math.cos(angle);
-      const y = centerY + radius * Math.sin(angle);
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      
+      const offsetX = (Math.random() - 0.5) * cellWidth * 0.3;
+      const offsetY = (Math.random() - 0.5) * cellHeight * 0.3;
       
       nodes.push({
         id: `random-node-${i}`,
-        x,
-        y,
+        x: marginX + (col + 1) * cellWidth + offsetX,
+        y: marginY + (row + 1) * cellHeight + offsetY,
         label: String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : ''),
       });
     }
 
-    // Generate random edges (approximately 1.5 * nodeCount edges for connectivity)
-    const edgeCount = Math.min(Math.floor(count * 1.5), count * (count - 1));
-    const usedPairs = new Set<string>();
+    // Create spanning tree for connectivity
+    const edgeSet = new Set<string>();
     
-    for (let i = 0; i < edgeCount; i++) {
-      let source, target;
-      let pairKey;
-      
-      // Try to find a unique pair
-      let attempts = 0;
-      do {
-        source = Math.floor(Math.random() * count);
-        target = Math.floor(Math.random() * count);
-        pairKey = `${source}-${target}`;
-        attempts++;
-      } while ((source === target || usedPairs.has(pairKey)) && attempts < 50);
-      
-      if (attempts >= 50) break;
-      
-      usedPairs.add(pairKey);
-      
+    for (let i = 1; i < count; i++) {
+      const source = Math.floor(Math.random() * i);
+      edgeSet.add(`${source}-${i}`);
       edges.push({
-        id: `random-edge-${i}`,
-        source: nodes[source].id,
-        target: nodes[target].id,
+        id: `random-edge-${edges.length}`,
+        source: `random-node-${source}`,
+        target: `random-node-${i}`,
         weight: Math.floor(Math.random() * 20) + 1,
       });
     }
-
-    setRandomGraph({ nodes, edges });
     
-    toast({
-      title: "Граф сгенерирован",
-      description: `${LABELS.NODES_GENERATED}: ${nodes.length}, ${LABELS.EDGES_GENERATED}: ${edges.length}`,
-    });
+    // Add additional random edges
+    const additionalEdges = Math.floor(count * 0.8);
+    let attempts = 0;
+    const maxAttempts = count * count;
+    
+    while (edges.length < count - 1 + additionalEdges && attempts < maxAttempts) {
+      const source = Math.floor(Math.random() * count);
+      const target = Math.floor(Math.random() * count);
+      
+      if (source !== target && !edgeSet.has(`${source}-${target}`) && !edgeSet.has(`${target}-${source}`)) {
+        edgeSet.add(`${source}-${target}`);
+        edges.push({
+          id: `random-edge-${edges.length}`,
+          source: `random-node-${source}`,
+          target: `random-node-${target}`,
+          weight: Math.floor(Math.random() * 20) + 1,
+        });
+      }
+      attempts++;
+    }
+    
+    return { nodes, edges };
+  };
+
+  const handleCompareUserGraph = () => {
+    setComparisonGraph(graph);
+    setShowComparison(true);
+  };
+
+  const handleCompareRandomGraph = () => {
+    const randomGraph = generateRandomGraph();
+    if (randomGraph) {
+      setComparisonGraph(randomGraph);
+      setShowComparison(true);
+      toast({
+        title: LABELS.GENERATE_GRAPH,
+        description: `${randomGraph.nodes.length} ${LABELS.NODES_GENERATED}, ${randomGraph.edges.length} ${LABELS.EDGES_GENERATED}`,
+      });
+    }
   };
 
   return (
@@ -483,63 +507,41 @@ export const GraphApp: React.FC = () => {
         </Card>
           </TabsContent>
 
-          <TabsContent value="visualization" className="space-y-6">
-            {/* Random Graph Generator */}
+          <TabsContent value="visualization" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Network className="h-5 w-5" />
-                  {LABELS.RANDOM_GRAPH}
-                </CardTitle>
+                <CardTitle>{LABELS.COMPARISON_CONTROLS}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-end gap-4">
-                  <div className="flex-1">
-                    <Label htmlFor="node-count">{LABELS.NUMBER_OF_NODES}</Label>
-                    <Input
-                      id="node-count"
-                      type="number"
-                      min="2"
-                      max="50"
-                      value={nodeCount}
-                      onChange={(e) => setNodeCount(e.target.value)}
-                      placeholder="2-50"
-                    />
-                  </div>
-                  <Button onClick={generateRandomGraph}>
-                    {LABELS.GENERATE_GRAPH}
+                <div className="space-y-2">
+                  <Label htmlFor="node-count">{LABELS.NUMBER_OF_NODES}</Label>
+                  <Input
+                    id="node-count"
+                    type="number"
+                    min="2"
+                    max="50"
+                    value={nodeCount}
+                    onChange={(e) => setNodeCount(e.target.value)}
+                    placeholder={LABELS.NUMBER_OF_NODES}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button onClick={handleCompareUserGraph} className="w-full">
+                    {LABELS.COMPARE_USER_GRAPH}
+                  </Button>
+                  <Button onClick={handleCompareRandomGraph} className="w-full" variant="secondary">
+                    {LABELS.COMPARE_RANDOM_GRAPH}
                   </Button>
                 </div>
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Read-only Graph Visualization */}
-              <div className="lg:col-span-2">
-                <Card className="h-[500px]">
-                  <CardHeader>
-                    <CardTitle>{LABELS.GRAPH_VISUALIZATION}</CardTitle>
-                    <p className="text-sm text-muted-foreground">
-                      {randomGraph ? "Сгенерированный граф" : "Граф из редактора"}
-                    </p>
-                  </CardHeader>
-                  <CardContent className="h-[calc(100%-100px)]">
-                    <GraphVisualization
-                      graph={randomGraph || graph}
-                      onGraphChange={() => {}} 
-                      highlightedPath={[]}
-                      selectedNodes={[]}
-                      onNodeSelect={() => {}}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Algorithm Comparison */}
-              <div>
-                <AlgorithmComparison graph={randomGraph || graph} />
-              </div>
-            </div>
+            {showComparison && comparisonGraph && (
+              <AlgorithmComparison 
+                graph={comparisonGraph} 
+                onRun={() => setShowComparison(true)}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </div>

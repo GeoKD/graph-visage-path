@@ -4,13 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Timer, Zap } from "lucide-react";
+import { Timer } from "lucide-react";
 import { dijkstra } from "@/lib/dijkstra";
 import { floyd } from "@/lib/floyd";
 import { LABELS } from "@/constants/labels";
+import { GraphVisualization } from "./GraphVisualization";
 
 interface AlgorithmComparisonProps {
   graph: Graph;
+  onRun?: () => void;
 }
 
 interface ComparisonResult {
@@ -30,7 +32,7 @@ interface ComparisonResult {
   }>;
 }
 
-export const AlgorithmComparison: React.FC<AlgorithmComparisonProps> = ({ graph }) => {
+export const AlgorithmComparison: React.FC<AlgorithmComparisonProps> = ({ graph, onRun }) => {
   const [result, setResult] = useState<ComparisonResult | null>(null);
 
   const getNodeLabel = (nodeId: string) => {
@@ -38,6 +40,7 @@ export const AlgorithmComparison: React.FC<AlgorithmComparisonProps> = ({ graph 
   };
 
   const runComparison = () => {
+    onRun?.();
     const nodes = graph.nodes.map(n => n.id);
     
     // Запускаем Dijkstra для всех пар
@@ -78,86 +81,93 @@ export const AlgorithmComparison: React.FC<AlgorithmComparisonProps> = ({ graph 
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Zap className="h-5 w-5" />
-          {LABELS.ALGORITHM_COMPARISON}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <Button onClick={runComparison} className="w-full">
-          <Timer className="h-4 w-4 mr-2" />
-          {LABELS.RUN_COMPARISON}
-        </Button>
+    <div className="space-y-4">
+      <div className="h-[300px] w-full">
+        <GraphVisualization
+          graph={graph}
+          onGraphChange={() => {}}
+          onNodeSelect={() => {}}
+        />
+      </div>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>{LABELS.ALGORITHM_COMPARISON}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Button onClick={runComparison} className="w-full">
+            <Timer className="h-4 w-4 mr-2" />
+            {LABELS.RUN_COMPARISON}
+          </Button>
 
-        {result && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-2">{LABELS.DIJKSTRA}</p>
-                <Badge variant="secondary">
-                  {result.dijkstraTime.toFixed(2)} мс
-                </Badge>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {result.dijkstraPairs.length} {LABELS.PAIRS_FOUND}
-                </p>
-              </div>
-              
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="text-sm font-medium mb-2">{LABELS.FLOYD}</p>
-                <Badge variant="secondary">
-                  {result.floydTime.toFixed(2)} мс
-                </Badge>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {result.floydPairs.length} {LABELS.PAIRS_FOUND}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 bg-primary/10 rounded-lg">
-              <p className="text-sm font-medium mb-2">{LABELS.WINNER}</p>
-              <Badge className="bg-primary text-primary-foreground">
-                {result.dijkstraTime < result.floydTime ? LABELS.DIJKSTRA : LABELS.FLOYD}
-                {' - '}
-                {Math.abs(result.dijkstraTime - result.floydTime).toFixed(2)} мс {LABELS.FASTER}
-              </Badge>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium text-foreground mb-2">
-                {LABELS.ALL_SHORTEST_PATHS}
-              </p>
-              <ScrollArea className="h-[300px]">
-                <div className="space-y-2">
-                  {result.floydPairs.map((pair, idx) => (
-                    <div key={idx} className="p-2 bg-background rounded border">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Badge variant="outline" className="text-xs">
-                          {getNodeLabel(pair.from)} → {getNodeLabel(pair.to)}
-                        </Badge>
-                        <span className="text-xs text-muted-foreground">
-                          {LABELS.DISTANCE} {pair.distance.toFixed(2)}
-                        </span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {pair.path.map((nodeId, index) => (
-                          <React.Fragment key={`${idx}-${nodeId}-${index}`}>
-                            <span className="text-xs">{getNodeLabel(nodeId)}</span>
-                            {index < pair.path.length - 1 && (
-                              <span className="text-xs text-muted-foreground">→</span>
-                            )}
-                          </React.Fragment>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+          {result && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium mb-2">{LABELS.DIJKSTRA}</p>
+                  <Badge variant="secondary">
+                    {result.dijkstraTime.toFixed(2)} мс
+                  </Badge>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {result.dijkstraPairs.length} {LABELS.PAIRS_FOUND}
+                  </p>
                 </div>
-              </ScrollArea>
+                
+                <div className="p-4 bg-muted rounded-lg">
+                  <p className="text-sm font-medium mb-2">{LABELS.FLOYD}</p>
+                  <Badge variant="secondary">
+                    {result.floydTime.toFixed(2)} мс
+                  </Badge>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {result.floydPairs.length} {LABELS.PAIRS_FOUND}
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-4 bg-primary/10 rounded-lg">
+                <p className="text-sm font-medium mb-2">{LABELS.WINNER}</p>
+                <Badge className="bg-primary text-primary-foreground">
+                  {result.dijkstraTime < result.floydTime ? LABELS.DIJKSTRA : LABELS.FLOYD}
+                  {' - '}
+                  {Math.abs(result.dijkstraTime - result.floydTime).toFixed(2)} мс {LABELS.FASTER}
+                </Badge>
+              </div>
+
+              <div>
+                <p className="text-sm font-medium text-foreground mb-2">
+                  {LABELS.ALL_SHORTEST_PATHS}
+                </p>
+                <ScrollArea className="h-[300px]">
+                  <div className="space-y-2">
+                    {result.floydPairs.map((pair, idx) => (
+                      <div key={idx} className="p-2 bg-background rounded border">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">
+                            {getNodeLabel(pair.from)} → {getNodeLabel(pair.to)}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {LABELS.DISTANCE} {pair.distance.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap gap-1">
+                          {pair.path.map((nodeId, index) => (
+                            <React.Fragment key={`${idx}-${nodeId}-${index}`}>
+                              <span className="text-xs">{getNodeLabel(nodeId)}</span>
+                              {index < pair.path.length - 1 && (
+                                <span className="text-xs text-muted-foreground">→</span>
+                              )}
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </div>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 };

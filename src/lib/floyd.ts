@@ -49,22 +49,33 @@ export function floyd(graph: Graph): FloydResult {
     }
   }
 
-  // Создаём массив всех пар с путями
+  // Создаём массив всех пар с путями используя процедуру Ху
   const pairs: FloydResult['pairs'] = [];
+  
+  // Процедура Ху для восстановления пути
+  const reconstructPath = (from: string, to: string): string[] | null => {
+    if (distances[from][to] === Infinity) return null;
+    if (from === to) return [from];
+    
+    const path: string[] = [from];
+    let current = from;
+    
+    while (current !== to) {
+      const nextNode = next[current][to];
+      if (nextNode === null) return null;
+      path.push(nextNode);
+      current = nextNode;
+    }
+    
+    return path;
+  };
   
   for (const from of nodes) {
     for (const to of nodes) {
       if (from !== to && distances[from][to] !== Infinity) {
-        const path: string[] = [];
-        let current: string | null = from;
+        const path = reconstructPath(from, to);
         
-        while (current !== null && current !== to) {
-          path.push(current);
-          current = next[current][to];
-        }
-        
-        if (current === to) {
-          path.push(to);
+        if (path) {
           pairs.push({
             from,
             to,
