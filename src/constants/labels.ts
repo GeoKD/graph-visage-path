@@ -63,4 +63,11 @@ export const LABELS = {
   WINNER: "Победитель",
   FASTER: "быстрее",
   ALL_SHORTEST_PATHS: "Все кратчайшие пути",
+  
+  // Random Graph Generator
+  RANDOM_GRAPH: "Генератор случайного графа",
+  NUMBER_OF_NODES: "Количество вершин",
+  GENERATE_GRAPH: "Сгенерировать граф",
+  NODES_GENERATED: "вершин сгенерировано",
+  EDGES_GENERATED: "дуг сгенерировано",
 } as const;

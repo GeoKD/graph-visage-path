@@ -35,6 +35,8 @@ export const GraphApp: React.FC = () => {
   const [highlightedPath, setHighlightedPath] = useState<string[]>([]);
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const [edgeWeight, setEdgeWeight] = useState<string>("1");
+  const [randomGraph, setRandomGraph] = useState<Graph | null>(null);
+  const [nodeCount, setNodeCount] = useState<string>("10");
 
   const handleNodeSelect = (nodeId: string) => {
     setSelectedNodes(prev => {
@@ -278,6 +280,75 @@ export const GraphApp: React.FC = () => {
     }
   };
 
+  const generateRandomGraph = () => {
+    const count = parseInt(nodeCount);
+    if (isNaN(count) || count < 2 || count > 50) {
+      toast({
+        title: "Неверное значение",
+        description: "Введите число от 2 до 50",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const nodes: Node[] = [];
+    const edges: Edge[] = [];
+    
+    // Generate nodes in a circular layout to fit on screen
+    const centerX = 300;
+    const centerY = 200;
+    const radius = Math.min(150, 100 + count * 2);
+    
+    for (let i = 0; i < count; i++) {
+      const angle = (i / count) * 2 * Math.PI;
+      const x = centerX + radius * Math.cos(angle);
+      const y = centerY + radius * Math.sin(angle);
+      
+      nodes.push({
+        id: `random-node-${i}`,
+        x,
+        y,
+        label: String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : ''),
+      });
+    }
+
+    // Generate random edges (approximately 1.5 * nodeCount edges for connectivity)
+    const edgeCount = Math.min(Math.floor(count * 1.5), count * (count - 1));
+    const usedPairs = new Set<string>();
+    
+    for (let i = 0; i < edgeCount; i++) {
+      let source, target;
+      let pairKey;
+      
+      // Try to find a unique pair
+      let attempts = 0;
+      do {
+        source = Math.floor(Math.random() * count);
+        target = Math.floor(Math.random() * count);
+        pairKey = `${source}-${target}`;
+        attempts++;
+      } while ((source === target || usedPairs.has(pairKey)) && attempts < 50);
+      
+      if (attempts >= 50) break;
+      
+      usedPairs.add(pairKey);
+      
+      edges.push({
+        id: `random-edge-${i}`,
+        source: nodes[source].id,
+        target: nodes[target].id,
+        weight: Math.floor(Math.random() * 20) + 1,
+      });
+    }
+
+    setRandomGraph({ nodes, edges });
+    
+    toast({
+      title: "Граф сгенерирован",
+      description: `${LABELS.NODES_GENERATED}: ${nodes.length}, ${LABELS.EDGES_GENERATED}: ${edges.length}`,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-background p-6">
       <div className="max-w-7xl mx-auto space-y-6">
@@ -413,6 +484,35 @@ export const GraphApp: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="visualization" className="space-y-6">
+            {/* Random Graph Generator */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Network className="h-5 w-5" />
+                  {LABELS.RANDOM_GRAPH}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-end gap-4">
+                  <div className="flex-1">
+                    <Label htmlFor="node-count">{LABELS.NUMBER_OF_NODES}</Label>
+                    <Input
+                      id="node-count"
+                      type="number"
+                      min="2"
+                      max="50"
+                      value={nodeCount}
+                      onChange={(e) => setNodeCount(e.target.value)}
+                      placeholder="2-50"
+                    />
+                  </div>
+                  <Button onClick={generateRandomGraph}>
+                    {LABELS.GENERATE_GRAPH}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Read-only Graph Visualization */}
               <div className="lg:col-span-2">
@@ -420,12 +520,12 @@ export const GraphApp: React.FC = () => {
                   <CardHeader>
                     <CardTitle>{LABELS.GRAPH_VISUALIZATION}</CardTitle>
                     <p className="text-sm text-muted-foreground">
-                      Только для визуализации (без редактирования)
+                      {randomGraph ? "Сгенерированный граф" : "Граф из редактора"}
                     </p>
                   </CardHeader>
                   <CardContent className="h-[calc(100%-100px)]">
                     <GraphVisualization
-                      graph={graph}
+                      graph={randomGraph || graph}
                       onGraphChange={() => {}} 
                       highlightedPath={[]}
                       selectedNodes={[]}
@@ -437,7 +537,7 @@ export const GraphApp: React.FC = () => {
 
               {/* Algorithm Comparison */}
               <div>
-                <AlgorithmComparison graph={graph} />
+                <AlgorithmComparison graph={randomGraph || graph} />
               </div>
             </div>
           </TabsContent>
