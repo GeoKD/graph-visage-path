@@ -133,36 +133,70 @@ export const AlgorithmComparison: React.FC<AlgorithmComparisonProps> = ({ graph,
                 </Badge>
               </div>
 
-              <div>
-                <p className="text-sm font-medium text-foreground mb-2">
-                  {LABELS.ALL_SHORTEST_PATHS}
-                </p>
-                <ScrollArea className="h-[300px]">
-                  <div className="space-y-2">
-                    {result.floydPairs.map((pair, idx) => (
-                      <div key={idx} className="p-2 bg-background rounded border">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Badge variant="outline" className="text-xs">
-                            {getNodeLabel(pair.from)} → {getNodeLabel(pair.to)}
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {LABELS.DISTANCE} {pair.distance.toFixed(2)}
-                          </span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">
+                    {LABELS.DIJKSTRA} - {LABELS.ALL_SHORTEST_PATHS}
+                  </p>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-2">
+                      {result.dijkstraPairs.map((pair, idx) => (
+                        <div key={idx} className="p-2 bg-background rounded border">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-xs">
+                              {getNodeLabel(pair.from)} → {getNodeLabel(pair.to)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {LABELS.DISTANCE} {pair.distance.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {pair.path.map((nodeId, index) => (
+                              <React.Fragment key={`dijkstra-${idx}-${nodeId}-${index}`}>
+                                <span className="text-xs">{getNodeLabel(nodeId)}</span>
+                                {index < pair.path.length - 1 && (
+                                  <span className="text-xs text-muted-foreground">→</span>
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
                         </div>
-                        <div className="flex flex-wrap gap-1">
-                          {pair.path.map((nodeId, index) => (
-                            <React.Fragment key={`${idx}-${nodeId}-${index}`}>
-                              <span className="text-xs">{getNodeLabel(nodeId)}</span>
-                              {index < pair.path.length - 1 && (
-                                <span className="text-xs text-muted-foreground">→</span>
-                              )}
-                            </React.Fragment>
-                          ))}
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-foreground mb-2">
+                    {LABELS.FLOYD} - {LABELS.ALL_SHORTEST_PATHS}
+                  </p>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-2">
+                      {result.floydPairs.map((pair, idx) => (
+                        <div key={idx} className="p-2 bg-background rounded border">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Badge variant="outline" className="text-xs">
+                              {getNodeLabel(pair.from)} → {getNodeLabel(pair.to)}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {LABELS.DISTANCE} {pair.distance.toFixed(2)}
+                            </span>
+                          </div>
+                          <div className="flex flex-wrap gap-1">
+                            {pair.path.map((nodeId, index) => (
+                              <React.Fragment key={`floyd-${idx}-${nodeId}-${index}`}>
+                                <span className="text-xs">{getNodeLabel(nodeId)}</span>
+                                {index < pair.path.length - 1 && (
+                                  <span className="text-xs text-muted-foreground">→</span>
+                                )}
+                              </React.Fragment>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
               </div>
             </div>
           )}

@@ -295,62 +295,41 @@ export const GraphApp: React.FC = () => {
     const nodes: Node[] = [];
     const edges: Edge[] = [];
     
-    // Generate nodes using grid-based layout with randomization
-    const cols = Math.ceil(Math.sqrt(count * 1.5));
-    const rows = Math.ceil(count / cols);
-    const cellWidth = 500 / (cols + 1);
-    const cellHeight = 320 / (rows + 1);
-    const marginX = 50;
-    const marginY = 40;
+    // Generate nodes in circular layout
+    const centerX = 300;
+    const centerY = 200;
+    const radius = 150;
     
     for (let i = 0; i < count; i++) {
-      const col = i % cols;
-      const row = Math.floor(i / cols);
-      
-      const offsetX = (Math.random() - 0.5) * cellWidth * 0.3;
-      const offsetY = (Math.random() - 0.5) * cellHeight * 0.3;
-      
+      const angle = (2 * Math.PI * i) / count;
       nodes.push({
         id: `random-node-${i}`,
-        x: marginX + (col + 1) * cellWidth + offsetX,
-        y: marginY + (row + 1) * cellHeight + offsetY,
+        x: centerX + radius * Math.cos(angle),
+        y: centerY + radius * Math.sin(angle),
         label: String.fromCharCode(65 + (i % 26)) + (i >= 26 ? Math.floor(i / 26) : ''),
       });
     }
 
-    // Create spanning tree for connectivity
+    // Generate random edges
+    const edgeCount = Math.floor(count * 1.5);
     const edgeSet = new Set<string>();
     
-    for (let i = 1; i < count; i++) {
-      const source = Math.floor(Math.random() * i);
-      edgeSet.add(`${source}-${i}`);
+    for (let i = 0; i < edgeCount; i++) {
+      let source = Math.floor(Math.random() * count);
+      let target = Math.floor(Math.random() * count);
+      
+      while (source === target || edgeSet.has(`${source}-${target}`)) {
+        source = Math.floor(Math.random() * count);
+        target = Math.floor(Math.random() * count);
+      }
+      
+      edgeSet.add(`${source}-${target}`);
       edges.push({
-        id: `random-edge-${edges.length}`,
+        id: `random-edge-${i}`,
         source: `random-node-${source}`,
-        target: `random-node-${i}`,
+        target: `random-node-${target}`,
         weight: Math.floor(Math.random() * 20) + 1,
       });
-    }
-    
-    // Add additional random edges
-    const additionalEdges = Math.floor(count * 0.8);
-    let attempts = 0;
-    const maxAttempts = count * count;
-    
-    while (edges.length < count - 1 + additionalEdges && attempts < maxAttempts) {
-      const source = Math.floor(Math.random() * count);
-      const target = Math.floor(Math.random() * count);
-      
-      if (source !== target && !edgeSet.has(`${source}-${target}`) && !edgeSet.has(`${target}-${source}`)) {
-        edgeSet.add(`${source}-${target}`);
-        edges.push({
-          id: `random-edge-${edges.length}`,
-          source: `random-node-${source}`,
-          target: `random-node-${target}`,
-          weight: Math.floor(Math.random() * 20) + 1,
-        });
-      }
-      attempts++;
     }
     
     return { nodes, edges };
