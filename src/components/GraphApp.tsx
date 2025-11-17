@@ -4,6 +4,7 @@ import { GraphVisualization } from "./GraphVisualization";
 import { IncidenceMatrix } from "./IncidenceMatrix";
 import { PathFinder } from "./PathFinder";
 import { AlgorithmComparison } from "./AlgorithmComparison";
+import { PacketRouting } from "./PacketRouting";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -383,9 +384,10 @@ export const GraphApp: React.FC = () => {
         </div>
 
         <Tabs defaultValue="editor" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mx-auto">
+          <TabsList className="grid w-full grid-cols-3 max-w-3xl mx-auto">
             <TabsTrigger value="editor">{LABELS.TAB_EDITOR}</TabsTrigger>
             <TabsTrigger value="visualization">{LABELS.TAB_VISUALIZATION}</TabsTrigger>
+            <TabsTrigger value="routing">{LABELS.PACKET_ROUTING}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="editor" className="space-y-6">
@@ -521,6 +523,10 @@ export const GraphApp: React.FC = () => {
                 onRun={() => setShowComparison(true)}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="routing" className="space-y-4">
+            <PacketRouting graph={graph} onGraphChange={setGraph} />
           </TabsContent>
         </Tabs>
       </div>
