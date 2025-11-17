@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Graph, Packet, RoutingTable } from "@/types/graph";
+import { Graph, Packet, RoutingTable, TransmissionRecord } from "@/types/graph";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,10 +8,21 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { GraphVisualization } from "./GraphVisualization";
-import { buildRoutingTables, findVirtualCircuitRoute, findDatagramRoute, RoutingMethod } from "@/lib/routing";
-import { Play, Pause, RotateCcw, Table } from "lucide-react";
+import { 
+  buildRoutingTables, 
+  findVirtualCircuitRoute, 
+  findDatagramRoute, 
+  findRandomRoute,
+  findFloodingRoutes,
+  findFixedRoute,
+  findAdaptiveRoute,
+  findExperienceRoute,
+  RoutingMethod 
+} from "@/lib/routing";
+import { Play, Pause, RotateCcw, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { LABELS } from "@/constants/labels";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface PacketRoutingProps {
   graph: Graph;
@@ -29,6 +40,10 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
   const [routingTable, setRoutingTable] = useState<RoutingTable>({});
   const [showRoutingTables, setShowRoutingTables] = useState(false);
   const [currentPath, setCurrentPath] = useState<string[]>([]);
+  const [transmissionHistory, setTransmissionHistory] = useState<TransmissionRecord[]>([]);
+  const [highlightedEdges, setHighlightedEdges] = useState<Set<string>>(new Set());
+
+  const packetColors = ['#ef4444', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316'];
 
   // Build routing tables when graph changes
   useEffect(() => {
@@ -71,46 +86,90 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
     }
 
     // Find route based on routing method
+    let routes: string[][] = [];
     let route: string[] = [];
-    if (routingMethod === 'virtual-circuit') {
-      route = findVirtualCircuitRoute(graph, sourceNodeId, destinationNodeId);
+    
+    switch (routingMethod) {
+      case 'virtual-circuit':
+        route = findVirtualCircuitRoute(graph, sourceNodeId, destinationNodeId);
+        break;
+      case 'datagram':
+        route = findDatagramRoute(routingTable, sourceNodeId, destinationNodeId);
+        break;
+      case 'random':
+        route = findRandomRoute(graph, sourceNodeId, destinationNodeId);
+        break;
+      case 'flooding':
+        routes = findFloodingRoutes(graph, sourceNodeId, destinationNodeId);
+        break;
+      case 'fixed':
+        route = findFixedRoute(graph, sourceNodeId, destinationNodeId);
+        break;
+      case 'adaptive':
+        route = findAdaptiveRoute(graph, routingTable, sourceNodeId, destinationNodeId);
+        break;
+      case 'experience':
+        route = findExperienceRoute(routingTable, sourceNodeId, destinationNodeId);
+        break;
+    }
+
+    // For flooding, create multiple packets
+    if (routingMethod === 'flooding' && routes.length > 0) {
+      const newPackets = routes.slice(0, 3).map((r, idx) => ({
+        id: `packet-${Date.now()}-${idx}`,
+        number: packets.length + idx + 1,
+        sourceId: sourceNodeId,
+        destinationId: destinationNodeId,
+        size,
+        currentNodeId: sourceNodeId,
+        route: r,
+        routeIndex: 0,
+        status: 'waiting' as const,
+        color: packetColors[idx % packetColors.length],
+        progress: 0,
+        startTime: Date.now(),
+      }));
+      setPackets(newPackets);
+      setCurrentPath(routes[0]);
+      setIsAnimating(true);
     } else {
-      route = findDatagramRoute(routingTable, sourceNodeId, destinationNodeId);
+      if (route.length === 0) {
+        toast({
+          title: LABELS.ERROR,
+          description: "No route found between selected nodes",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create a packet
+      const newPacket: Packet = {
+        id: `packet-${Date.now()}`,
+        number: packets.length + 1,
+        sourceId: sourceNodeId,
+        destinationId: destinationNodeId,
+        size,
+        currentNodeId: sourceNodeId,
+        route,
+        routeIndex: 0,
+        status: 'waiting',
+        color: packetColors[packets.length % packetColors.length],
+        progress: 0,
+        startTime: Date.now(),
+      };
+
+      setPackets([newPacket]);
+      setCurrentPath(route);
+      setIsAnimating(true);
     }
-
-    if (route.length === 0) {
-      toast({
-        title: LABELS.ERROR,
-        description: "No route found between selected nodes",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Create a packet
-    const newPacket: Packet = {
-      id: `packet-${Date.now()}`,
-      number: packets.length + 1,
-      sourceId: sourceNodeId,
-      destinationId: destinationNodeId,
-      size,
-      currentNodeId: sourceNodeId,
-      route,
-      routeIndex: 0,
-      status: 'waiting',
-    };
-
-    setPackets([newPacket]);
-    setCurrentPath(route);
-    setIsAnimating(true);
 
     toast({
       title: "Transmission Started",
-      description: `Packet #${newPacket.number} using ${routingMethod === 'virtual-circuit' ? 'Virtual Circuit' : 'Datagram'} method`,
+      description: `Using ${routingMethod} routing`,
     });
   };
 
-  // Animation loop
+  // Animation loop - smooth progression along edges
   useEffect(() => {
     if (!isAnimating || packets.length === 0) return;
 
@@ -119,15 +178,40 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
         const updatedPackets = prevPackets.map(packet => {
           if (packet.status === 'delivered') return packet;
 
-          const nextIndex = packet.routeIndex + 1;
-          if (nextIndex >= packet.route.length) {
-            return { ...packet, status: 'delivered' as const };
+          const newProgress = packet.progress + 0.1; // Increment progress
+
+          if (newProgress >= 1) {
+            // Reached next node
+            const nextIndex = packet.routeIndex + 1;
+            if (nextIndex >= packet.route.length) {
+              const endTime = Date.now();
+              const duration = ((endTime - packet.startTime) / 1000).toFixed(1);
+              
+              // Add to transmission history
+              setTransmissionHistory(prev => [...prev, {
+                packetNumber: packet.number,
+                path: packet.route.map(id => getNodeLabel(id)).join(' → '),
+                size: packet.size,
+                startTime: packet.startTime,
+                endTime,
+                duration: `${duration}s`,
+              }]);
+
+              return { ...packet, status: 'delivered' as const, endTime, progress: 1 };
+            }
+
+            return {
+              ...packet,
+              currentNodeId: packet.route[nextIndex],
+              routeIndex: nextIndex,
+              status: 'transmitting' as const,
+              progress: 0,
+            };
           }
 
           return {
             ...packet,
-            currentNodeId: packet.route[nextIndex],
-            routeIndex: nextIndex,
+            progress: newProgress,
             status: 'transmitting' as const,
           };
         });
@@ -142,9 +226,21 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
           });
         }
 
+        // Update highlighted edges based on packet positions
+        const edges = new Set<string>();
+        updatedPackets.forEach(packet => {
+          if (packet.status === 'transmitting' && packet.routeIndex < packet.route.length - 1) {
+            const from = packet.route[packet.routeIndex];
+            const to = packet.route[packet.routeIndex + 1];
+            edges.add(`${from}-${to}`);
+            edges.add(`${to}-${from}`);
+          }
+        });
+        setHighlightedEdges(edges);
+
         return updatedPackets;
       });
-    }, 1000); // Move every 1 second
+    }, 100); // Update every 100ms for smooth animation
 
     return () => clearInterval(interval);
   }, [isAnimating, packets.length, toast]);
@@ -163,6 +259,26 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
     setPackets([]);
     setIsAnimating(false);
     setCurrentPath([]);
+    setHighlightedEdges(new Set());
+    setTransmissionHistory([]);
+  };
+
+  const getPacketPosition = (packet: Packet): { x: number; y: number } => {
+    if (packet.routeIndex >= packet.route.length - 1) {
+      const node = graph.nodes.find(n => n.id === packet.currentNodeId);
+      return node ? { x: node.x, y: node.y } : { x: 0, y: 0 };
+    }
+
+    const fromNode = graph.nodes.find(n => n.id === packet.route[packet.routeIndex]);
+    const toNode = graph.nodes.find(n => n.id === packet.route[packet.routeIndex + 1]);
+
+    if (!fromNode || !toNode) return { x: 0, y: 0 };
+
+    // Interpolate position along edge
+    const x = fromNode.x + (toNode.x - fromNode.x) * packet.progress;
+    const y = fromNode.y + (toNode.y - fromNode.y) * packet.progress;
+
+    return { x, y };
   };
 
   return (
@@ -181,8 +297,13 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="virtual-circuit">{LABELS.VIRTUAL_CIRCUIT}</SelectItem>
-                  <SelectItem value="datagram">{LABELS.DATAGRAM}</SelectItem>
+                  <SelectItem value="virtual-circuit">Virtual Circuit</SelectItem>
+                  <SelectItem value="datagram">Datagram</SelectItem>
+                  <SelectItem value="random">Random Routing</SelectItem>
+                  <SelectItem value="flooding">Flooding Routing</SelectItem>
+                  <SelectItem value="fixed">Fixed Routing</SelectItem>
+                  <SelectItem value="adaptive">Adaptive Routing</SelectItem>
+                  <SelectItem value="experience">Experience-Based Routing</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -253,7 +374,7 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
               variant="outline" 
               className="w-full"
             >
-              <Table className="w-4 h-4 mr-2" />
+              <TableIcon className="w-4 h-4 mr-2" />
               {showRoutingTables ? LABELS.HIDE_ROUTING_TABLES : LABELS.SHOW_ROUTING_TABLES}
             </Button>
           </CardContent>
@@ -311,31 +432,107 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
         </CardHeader>
         <CardContent>
           <div className="relative">
-            <GraphVisualization
-              graph={graph}
-              onGraphChange={onGraphChange}
-              highlightedPath={currentPath}
-            />
-            {/* Packet visualization overlay */}
-            {packets.map(packet => {
-              const node = graph.nodes.find(n => n.id === packet.currentNodeId);
-              if (!node) return null;
-              return (
-                <div
-                  key={packet.id}
-                  className="absolute w-3 h-3 bg-primary rounded-full animate-pulse"
-                  style={{
-                    left: `${node.x}px`,
-                    top: `${node.y}px`,
-                    transform: 'translate(-50%, -50%)',
-                    transition: 'all 1s ease-in-out',
-                  }}
-                />
-              );
-            })}
+            <svg width="600" height="400" className="border border-border rounded-lg bg-background">
+              {/* Render edges */}
+              {graph.edges.map(edge => {
+                const sourceNode = graph.nodes.find(n => n.id === edge.source);
+                const targetNode = graph.nodes.find(n => n.id === edge.target);
+                if (!sourceNode || !targetNode) return null;
+
+                const edgeKey1 = `${edge.source}-${edge.target}`;
+                const edgeKey2 = `${edge.target}-${edge.source}`;
+                const isHighlighted = highlightedEdges.has(edgeKey1) || highlightedEdges.has(edgeKey2);
+
+                return (
+                  <line
+                    key={edge.id}
+                    x1={sourceNode.x}
+                    y1={sourceNode.y}
+                    x2={targetNode.x}
+                    y2={targetNode.y}
+                    stroke={isHighlighted ? "hsl(var(--primary))" : "hsl(var(--border))"}
+                    strokeWidth={isHighlighted ? 3 : 2}
+                    className="transition-all duration-200"
+                  />
+                );
+              })}
+
+              {/* Render nodes */}
+              {graph.nodes.map(node => (
+                <g key={node.id}>
+                  <circle
+                    cx={node.x}
+                    cy={node.y}
+                    r={20}
+                    fill="hsl(var(--background))"
+                    stroke="hsl(var(--primary))"
+                    strokeWidth={2}
+                  />
+                  <text
+                    x={node.x}
+                    y={node.y}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    className="text-sm font-semibold fill-foreground"
+                  >
+                    {node.label}
+                  </text>
+                </g>
+              ))}
+
+              {/* Render packets */}
+              {packets.map(packet => {
+                const pos = getPacketPosition(packet);
+                return (
+                  <circle
+                    key={packet.id}
+                    cx={pos.x}
+                    cy={pos.y}
+                    r={8}
+                    fill={packet.color}
+                    stroke="white"
+                    strokeWidth={2}
+                    className="transition-all duration-100"
+                  />
+                );
+              })}
+            </svg>
           </div>
         </CardContent>
       </Card>
+
+      {/* Transmission History */}
+      {transmissionHistory.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Transmission History</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScrollArea className="h-[300px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Packet #</TableHead>
+                    <TableHead>Path</TableHead>
+                    <TableHead>Size (bytes)</TableHead>
+                    <TableHead>Duration</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {transmissionHistory.map((record, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell>{record.packetNumber}</TableCell>
+                      <TableCell className="max-w-md truncate">{record.path}</TableCell>
+                      <TableCell>{record.size}</TableCell>
+                      <TableCell>{record.duration}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Routing Tables */}
       {showRoutingTables && (
@@ -352,24 +549,24 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
                       {LABELS.NODE} {node.label}
                     </h4>
                     <div className="overflow-x-auto">
-                      <table className="w-full text-sm">
-                        <thead>
-                          <tr className="border-b">
-                            <th className="text-left py-2">{LABELS.DESTINATION}</th>
-                            <th className="text-left py-2">{LABELS.NEXT_HOP}</th>
-                            <th className="text-left py-2">{LABELS.DISTANCE}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>{LABELS.DESTINATION}</TableHead>
+                            <TableHead>{LABELS.NEXT_HOP}</TableHead>
+                            <TableHead>{LABELS.DISTANCE}</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
                           {routingTable[node.id]?.map((entry, idx) => (
-                            <tr key={idx} className="border-b">
-                              <td className="py-2">{getNodeLabel(entry.destination)}</td>
-                              <td className="py-2">{getNodeLabel(entry.nextHop)}</td>
-                              <td className="py-2">{entry.distance}</td>
-                            </tr>
+                            <TableRow key={idx}>
+                              <TableCell>{getNodeLabel(entry.destination)}</TableCell>
+                              <TableCell>{getNodeLabel(entry.nextHop)}</TableCell>
+                              <TableCell>{entry.distance}</TableCell>
+                            </TableRow>
                           ))}
-                        </tbody>
-                      </table>
+                        </TableBody>
+                      </Table>
                     </div>
                   </Card>
                 ))}

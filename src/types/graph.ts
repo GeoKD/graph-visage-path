@@ -39,6 +39,19 @@ export interface Packet {
   route: string[];
   routeIndex: number;
   status: 'waiting' | 'transmitting' | 'delivered';
+  color: string;
+  progress: number; // 0 to 1, position along current edge
+  startTime: number;
+  endTime?: number;
+}
+
+export interface TransmissionRecord {
+  packetNumber: number;
+  path: string;
+  size: number;
+  startTime: number;
+  endTime: number;
+  duration: string;
 }
 
 export interface RoutingTableEntry {
