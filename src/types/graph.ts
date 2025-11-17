@@ -28,3 +28,25 @@ export interface DragState {
   nodeId: string | null;
   offset: { x: number; y: number };
 }
+
+export interface Packet {
+  id: string;
+  number: number;
+  sourceId: string;
+  destinationId: string;
+  size: number;
+  currentNodeId: string;
+  route: string[];
+  routeIndex: number;
+  status: 'waiting' | 'transmitting' | 'delivered';
+}
+
+export interface RoutingTableEntry {
+  destination: string;
+  nextHop: string;
+  distance: number;
+}
+
+export interface RoutingTable {
+  [nodeId: string]: RoutingTableEntry[];
+}
