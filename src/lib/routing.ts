@@ -1,7 +1,8 @@
 import { Graph, RoutingTable } from "@/types/graph";
 import { dijkstra } from "./dijkstra";
 
-export type RoutingMethod = 'virtual-circuit' | 'datagram' | 'random' | 'flooding' | 'fixed' | 'adaptive' | 'experience';
+export type TransportMethod = 'virtual-circuit' | 'datagram';
+export type RoutingAlgorithm = 'random' | 'flooding' | 'fixed' | 'adaptive' | 'experience';
 
 // Build routing tables using shortest paths (routing by experience)
 export function buildRoutingTables(graph: Graph): RoutingTable {
