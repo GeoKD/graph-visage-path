@@ -17,7 +17,8 @@ import {
   findFixedRoute,
   findAdaptiveRoute,
   findExperienceRoute,
-  RoutingMethod 
+  TransportMethod,
+  RoutingAlgorithm
 } from "@/lib/routing";
 import { Play, Pause, RotateCcw, Table as TableIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -33,7 +34,9 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
   const { toast } = useToast();
   const [sourceNodeId, setSourceNodeId] = useState<string>("");
   const [destinationNodeId, setDestinationNodeId] = useState<string>("");
-  const [routingMethod, setRoutingMethod] = useState<RoutingMethod>('virtual-circuit');
+  const [transportMethod, setTransportMethod] = useState<TransportMethod>('virtual-circuit');
+  const [routingAlgorithm, setRoutingAlgorithm] = useState<RoutingAlgorithm>('fixed');
+  const [numberOfPackets, setNumberOfPackets] = useState<string>("1");
   const [packetSize, setPacketSize] = useState<string>("1024");
   const [packets, setPackets] = useState<Packet[]>([]);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -85,17 +88,22 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
       return;
     }
 
-    // Find route based on routing method
+    const numPackets = parseInt(numberOfPackets);
+    if (isNaN(numPackets) || numPackets <= 0) {
+      toast({
+        title: LABELS.ERROR,
+        description: "Invalid number of packets",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Find route based on transport method and routing algorithm
     let routes: string[][] = [];
     let route: string[] = [];
     
-    switch (routingMethod) {
-      case 'virtual-circuit':
-        route = findVirtualCircuitRoute(graph, sourceNodeId, destinationNodeId);
-        break;
-      case 'datagram':
-        route = findDatagramRoute(routingTable, sourceNodeId, destinationNodeId);
-        break;
+    // First determine route based on routing algorithm
+    switch (routingAlgorithm) {
       case 'random':
         route = findRandomRoute(graph, sourceNodeId, destinationNodeId);
         break;
@@ -113,9 +121,18 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
         break;
     }
 
-    // For flooding, create multiple packets
-    if (routingMethod === 'flooding' && routes.length > 0) {
-      const newPackets = routes.slice(0, 3).map((r, idx) => ({
+    // Apply transport method
+    if (routingAlgorithm !== 'flooding' && route.length > 0) {
+      if (transportMethod === 'virtual-circuit') {
+        route = findVirtualCircuitRoute(graph, sourceNodeId, destinationNodeId);
+      } else {
+        route = findDatagramRoute(routingTable, sourceNodeId, destinationNodeId);
+      }
+    }
+
+    // For flooding, create multiple packets across different routes
+    if (routingAlgorithm === 'flooding' && routes.length > 0) {
+      const newPackets = routes.slice(0, Math.min(numPackets, routes.length)).map((r, idx) => ({
         id: `packet-${Date.now()}-${idx}`,
         number: packets.length + idx + 1,
         sourceId: sourceNodeId,
@@ -142,30 +159,30 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
         return;
       }
 
-      // Create a packet
-      const newPacket: Packet = {
-        id: `packet-${Date.now()}`,
-        number: packets.length + 1,
+      // Create multiple packets on the same route
+      const newPackets = Array.from({ length: numPackets }, (_, idx) => ({
+        id: `packet-${Date.now()}-${idx}`,
+        number: packets.length + idx + 1,
         sourceId: sourceNodeId,
         destinationId: destinationNodeId,
         size,
         currentNodeId: sourceNodeId,
         route,
         routeIndex: 0,
-        status: 'waiting',
-        color: packetColors[packets.length % packetColors.length],
+        status: 'waiting' as const,
+        color: packetColors[(packets.length + idx) % packetColors.length],
         progress: 0,
-        startTime: Date.now(),
-      };
+        startTime: Date.now() + idx * 500, // Stagger packets
+      }));
 
-      setPackets([newPacket]);
+      setPackets(newPackets);
       setCurrentPath(route);
       setIsAnimating(true);
     }
 
     toast({
       title: "Transmission Started",
-      description: `Using ${routingMethod} routing`,
+      description: `Using ${transportMethod} transport with ${routingAlgorithm} routing`,
     });
   };
 
@@ -177,6 +194,9 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
       setPackets(prevPackets => {
         const updatedPackets = prevPackets.map(packet => {
           if (packet.status === 'delivered') return packet;
+          
+          // Only start animating if startTime has passed
+          if (Date.now() < packet.startTime) return packet;
 
           const newProgress = packet.progress + 0.1; // Increment progress
 
@@ -291,17 +311,28 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>{LABELS.ROUTING_METHOD}</Label>
-              <Select value={routingMethod} onValueChange={(v) => setRoutingMethod(v as RoutingMethod)}>
+              <Label>Transport Method</Label>
+              <Select value={transportMethod} onValueChange={(v) => setTransportMethod(v as TransportMethod)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="virtual-circuit">Virtual Circuit</SelectItem>
                   <SelectItem value="datagram">Datagram</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>{LABELS.ROUTING_METHOD}</Label>
+              <Select value={routingAlgorithm} onValueChange={(v) => setRoutingAlgorithm(v as RoutingAlgorithm)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fixed">Fixed Routing</SelectItem>
                   <SelectItem value="random">Random Routing</SelectItem>
                   <SelectItem value="flooding">Flooding Routing</SelectItem>
-                  <SelectItem value="fixed">Fixed Routing</SelectItem>
                   <SelectItem value="adaptive">Adaptive Routing</SelectItem>
                   <SelectItem value="experience">Experience-Based Routing</SelectItem>
                 </SelectContent>
@@ -338,6 +369,17 @@ export const PacketRouting: React.FC<PacketRoutingProps> = ({ graph, onGraphChan
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Number of Packets</Label>
+              <Input
+                type="number"
+                value={numberOfPackets}
+                onChange={(e) => setNumberOfPackets(e.target.value)}
+                placeholder="1"
+                min="1"
+              />
             </div>
 
             <div className="space-y-2">
